@@ -3,9 +3,13 @@
     "name": "puissance5",
     "slug": "puissance5",
     "version": "1.0.0",
+    "scheme": "puissance5",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
+    "experiments": {
+      "typedRoutes": true
+    },
     "ios": {
       "supportsTablet": true
     },
@@ -19,7 +23,37 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
+      "bundler": "metro",
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-router",
+      "@react-native-community/datetimepicker",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Autoriser l’application à accéder à la caméra pour prendre des photos sur site.",
+          "microphonePermission": "Autoriser l’application à accéder au micro (optionnel).",
+          "recordAudioAndroid": false,
+          "barcodeScannerEnabled": true
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Autoriser l’application à accéder à la localisation pour vérifier la présence sur site."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#25D366"
+        }
+      ],
+      "expo-sharing",
+      "expo-secure-store",
+      "expo-font"
+    ]
   }
 }
