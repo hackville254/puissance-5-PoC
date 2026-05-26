@@ -98,6 +98,9 @@ export default function IncidentsScreen() {
                   <Text className="text-[15px] font-semibold text-slate-900 dark:text-white">{inc.title}</Text>
                   <Text className="mt-1 text-[13px] text-slate-500 dark:text-slate-300">{site?.name ?? 'Site'}</Text>
                   <Text className="mt-1 text-[12px] text-slate-400 dark:text-slate-500">{inc.status.replace('_', ' ')}</Text>
+                  <Text className="mt-1 text-[12px] text-slate-400 dark:text-slate-500">
+                    {inc.photos.length} photo{inc.photos.length > 1 ? 's' : ''} de preuve
+                  </Text>
                 </View>
                 <Chip label={inc.severity} tone={toneFor(inc.severity)} />
               </View>

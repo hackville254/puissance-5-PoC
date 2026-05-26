@@ -1,3 +1,16 @@
+### [2026-05-26T08:08:31Z] | Rendre les preuves photo visibles et exploitables
+- **Contexte :** Le projet affichait une promesse produit autour des photos et de la camera, mais le parcours etait incomplet: la capture etait peu visible dans les controles, et les incidents n'avaient aucun flux photo exploitable alors qu'un bloc de placeholder etait encore present.
+- **Modifications effectuees :**
+    - Ajout d'une checklist produit de controle dans `PRODUCT_CONTROL_CHECKLIST.md`.
+    - Ajout d'un composant mutualise `components/ui/CameraCaptureModal.tsx` pour la capture photo et le scan QR.
+    - Ajout des helpers de preuves `lib/evidence.ts` pour signer les captures et relire le contexte terrain.
+    - Rendre le detail de controle beaucoup plus explicite sur l'obligation photo et offrir un demarrage direct vers la camera.
+    - Ajout des preuves photo sur les incidents avec stockage, affichage, suppression et indication de signature.
+    - Extension du modele et du store pour prendre en charge `incident.photos`.
+- **Decisions Techniques :** J'ai mutualise la capture et la signature plutot que de dupliquer un second flux camera. Cela reduit la dette technique, unifie les comportements de permission et prepare la future extension vers d'autres preuves terrain.
+- **Impacts & Dependances :** Fichiers touches: `app/(tabs)/controls/[id].tsx`, `app/(tabs)/controls/index.tsx`, `app/(tabs)/incidents/[id].tsx`, `app/(tabs)/incidents/index.tsx`, `components/ui/CameraCaptureModal.tsx`, `components/ui/Icon.tsx`, `lib/evidence.ts`, `lib/models.ts`, `lib/state.ts`, `lib/store.tsx`, `lib/mocks.ts`, `PRODUCT_CONTROL_CHECKLIST.md`. Le schema des incidents stocke maintenant aussi des photos.
+- **Prochaines étapes :** Brancher de vrais apercus plein ecran, gerer des lots de photos, relier les preuves incident aux actions correctives, puis ajouter des tests E2E mobiles pour les permissions et la capture.
+
 ### [2026-05-26T07:47:55Z] | Fond blanc explicite pour l authentification
 - **Contexte :** L'ecran d'authentification utilisait encore le fond clair par defaut de `Screen` (`slate-50`), ce qui donnait une teinte grisee au lieu d'un fond blanc net attendu.
 - **Modifications effectuees :**

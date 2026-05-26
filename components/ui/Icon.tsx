@@ -3,6 +3,7 @@ import type { ComponentProps } from 'react';
 import {
   BadgeCheck,
   Building2,
+  Camera,
   Calendar,
   Check,
   CheckCheck,
@@ -55,6 +56,7 @@ export type IconName =
   | 'trash'
   | 'list'
   | 'building'
+  | 'camera'
   | 'settings'
   | 'check'
   | 'minus'
@@ -94,6 +96,7 @@ const ICONS: Record<IconName, any> = {
   trash: Trash2,
   list: List,
   building: Building2,
+  camera: Camera,
   settings: Settings,
   check: Check,
   minus: Minus,

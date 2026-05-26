@@ -6,6 +6,7 @@ import type {
   ControlStatus,
   ControlType,
   Incident,
+  IncidentPhoto,
   IncidentStatus,
   Inspection,
   InspectionPhoto,
@@ -21,6 +22,7 @@ const MAX_PLANNED_CONTROLS = 365;
 const MAX_INCIDENTS = 500;
 const MAX_INSPECTIONS = 250;
 export const MAX_PHOTOS_PER_INSPECTION = 12;
+export const MAX_PHOTOS_PER_INCIDENT = 8;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
@@ -154,6 +156,23 @@ export function normalizeInspectionPhoto(value: unknown): InspectionPhoto | null
   };
 }
 
+export function normalizeIncidentPhoto(value: unknown): IncidentPhoto | null {
+  if (!isRecord(value)) return null;
+  const id = readString(value.id, '', 96);
+  const uri = readString(value.uri, '', 512);
+  if (!id || !uri) return null;
+  return {
+    id,
+    uri,
+    capturedAt: readString(value.capturedAt, new Date().toISOString(), 40),
+    lat: typeof value.lat === 'number' ? clamp(value.lat, -90, 90) : undefined,
+    lng: typeof value.lng === 'number' ? clamp(value.lng, -180, 180) : undefined,
+    fileHash: readOptionalString(value.fileHash, 128),
+    signature: readOptionalString(value.signature, 256),
+    certified: readBoolean(value.certified, false)
+  };
+}
+
 export function normalizeInspection(value: unknown, controlIds: Set<string>, templateIds: Set<string>): Inspection | null {
   if (!isRecord(value)) return null;
   const id = readString(value.id, '', 96);
@@ -201,6 +220,10 @@ export function normalizeIncident(value: unknown, siteIds: Set<string>): Inciden
   const id = readString(value.id, '', 96);
   const siteId = readString(value.siteId, '', 96);
   if (!id || !siteId || !siteIds.has(siteId)) return null;
+  const photos = readArray(value.photos)
+    .map(normalizeIncidentPhoto)
+    .filter((photo): photo is IncidentPhoto => Boolean(photo))
+    .slice(0, MAX_PHOTOS_PER_INCIDENT);
   return {
     id,
     siteId,
@@ -211,7 +234,8 @@ export function normalizeIncident(value: unknown, siteIds: Set<string>): Inciden
     status: readIncidentStatus(value.status, 'ouvert'),
     title: readString(value.title, 'Incident', 80),
     description: readString(value.description, '', 600),
-    assignedTo: readOptionalString(value.assignedTo, 64)
+    assignedTo: readOptionalString(value.assignedTo, 64),
+    photos
   };
 }
 

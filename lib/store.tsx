@@ -16,7 +16,9 @@ import type {
 } from './models';
 import { canPerform } from './models';
 import {
+  MAX_PHOTOS_PER_INCIDENT,
   MAX_PHOTOS_PER_INSPECTION,
+  normalizeIncidentPhoto,
   normalizeInspectionPhoto,
   normalizeLoadedState,
   normalizePlannedControl,
@@ -47,6 +49,8 @@ type Action =
   | { type: 'setInspectionPeople'; inspectionId: string; evaluatorName: string; evaluatedAgentName: string }
   | { type: 'addInspectionPhoto'; inspectionId: string; photo: Inspection['photos'][number] }
   | { type: 'deleteInspectionPhoto'; inspectionId: string; photoId: string }
+  | { type: 'addIncidentPhoto'; incidentId: string; photo: Incident['photos'][number] }
+  | { type: 'deleteIncidentPhoto'; incidentId: string; photoId: string }
   | {
       type: 'setInspectionCertifications';
       inspectionId: string;
@@ -414,7 +418,8 @@ function reducer(state: AppState, action: Action): AppState {
         status: 'ouvert',
         title,
         description,
-        assignedTo: action.assignedTo ? sanitizeText(action.assignedTo, 64) || undefined : undefined
+        assignedTo: action.assignedTo ? sanitizeText(action.assignedTo, 64) || undefined : undefined,
+        photos: []
       };
       return { ...state, incidents: [incident, ...state.incidents] };
     }
@@ -436,6 +441,33 @@ function reducer(state: AppState, action: Action): AppState {
     case 'deleteIncident':
       if (!canPerform(state.role, 'manage_incidents')) return state;
       return { ...state, incidents: state.incidents.filter(inc => inc.id !== action.incidentId) };
+    case 'addIncidentPhoto':
+      if (!canPerform(state.role, 'manage_incidents')) return state;
+      if (!normalizeIncidentPhoto(action.photo)) return state;
+      return {
+        ...state,
+        incidents: state.incidents.map(inc =>
+          inc.id === action.incidentId
+            ? {
+                ...inc,
+                photos: [action.photo, ...inc.photos.filter(photo => photo.id !== action.photo.id)].slice(0, MAX_PHOTOS_PER_INCIDENT)
+              }
+            : inc
+        )
+      };
+    case 'deleteIncidentPhoto':
+      if (!canPerform(state.role, 'manage_incidents')) return state;
+      return {
+        ...state,
+        incidents: state.incidents.map(inc =>
+          inc.id === action.incidentId
+            ? {
+                ...inc,
+                photos: inc.photos.filter(photo => photo.id !== action.photoId)
+              }
+            : inc
+        )
+      };
     case 'reset':
       return createInitialState();
     default:

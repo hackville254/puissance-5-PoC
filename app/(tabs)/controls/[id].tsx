@@ -1,16 +1,18 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Alert, Image, Modal, Platform, Pressable, Text, TextInput, View } from 'react-native';
 import { useColorScheme } from 'nativewind';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { AppBar } from '../../../components/ui/AppBar';
 import { Button } from '../../../components/ui/Button';
+import { CameraCaptureModal } from '../../../components/ui/CameraCaptureModal';
 import { Card } from '../../../components/ui/Card';
 import { Chip } from '../../../components/ui/Chip';
 import { Icon } from '../../../components/ui/Icon';
 import { Rating } from '../../../components/ui/Rating';
 import { Screen } from '../../../components/ui/Screen';
 import { SectionHeader } from '../../../components/ui/SectionHeader';
+import { createSignedEvidence } from '../../../lib/evidence';
 import { haversineDistanceMeters, nowISODateTime } from '../../../lib/format';
 import { canAccessPathname, canPerform } from '../../../lib/models';
 import { routes } from '../../../lib/routes';
@@ -21,22 +23,12 @@ export default function ControlDetailScreen() {
   const router = useRouter();
   const { state, dispatch } = useAppStore();
   const { colorScheme } = useColorScheme();
-
-  const CameraView: any = Platform.OS === 'web' ? null : require('expo-camera').CameraView;
-  const cameraPermissionsHook =
-    Platform.OS === 'web'
-      ? (() => [null, async () => null] as const)
-      : (require('expo-camera').useCameraPermissions as () => readonly [any, () => Promise<any>]);
   const Location: any = Platform.OS === 'web' ? null : require('expo-location');
   const Network: any = Platform.OS === 'web' ? null : require('expo-network');
-  const Crypto: any = Platform.OS === 'web' ? null : require('expo-crypto');
-  const SecureStore: any = Platform.OS === 'web' ? null : require('expo-secure-store');
-  const FileSystemLegacy: any = Platform.OS === 'web' ? null : require('expo-file-system/legacy');
   const [cameraMode, setCameraMode] = useState<null | { kind: 'before' | 'after' | 'qr' }>(null);
+  const [pendingCaptureKind, setPendingCaptureKind] = useState<null | 'before' | 'after'>(null);
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [qrValue, setQrValue] = useState('');
-  const [cameraPermission, requestCameraPermission] = cameraPermissionsHook();
-  const cameraRef = useRef<any>(null);
 
   const control = state.plannedControls.find(c => c.id === id);
   const site = control ? state.sites.find(s => s.id === control.siteId) : undefined;
@@ -105,63 +97,18 @@ export default function ControlDetailScreen() {
     };
   };
 
-  const ensureDeviceSecret = async () => {
-    if (Platform.OS === 'web') return null;
-    const key = 'p5_device_secret_v1';
-    const existing = await SecureStore.getItemAsync(key);
-    if (existing) return existing;
-    const bytes = await Crypto.getRandomBytesAsync(32);
-    const secret = Array.from(bytes as number[])
-      .map(b => Number(b).toString(16).padStart(2, '0'))
-      .join('');
-    await SecureStore.setItemAsync(key, secret);
-    return secret;
-  };
-
-  const signPhoto = async (
-    fileUri: string,
-    capturedAt: string,
-    lat?: number,
-    lng?: number,
-    distanceMeters?: number,
-    prereq?: { gpsVerified: boolean; networkVerified: boolean }
-  ) => {
-    if (!inspection || !site) return { fileHash: undefined, signature: undefined, certified: false };
-    if (Platform.OS === 'web') return { fileHash: undefined, signature: undefined, certified: false };
-    const secret = await ensureDeviceSecret();
-    if (!secret) return { fileHash: undefined, signature: undefined, certified: false };
-    const info = await FileSystemLegacy.getInfoAsync(fileUri, { md5: true });
-    const fileHash = info?.md5
-      ? await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, info.md5)
-      : await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, `${fileUri}|${capturedAt}`);
-    const payload = `${secret}|${fileHash}|${site.id}|${capturedAt}|${lat ?? ''}|${lng ?? ''}|${distanceMeters ?? ''}`;
-    const signature = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, payload);
-    const gpsOk = prereq ? prereq.gpsVerified : inspection.certifications.gpsVerified;
-    const netOk = prereq ? prereq.networkVerified : inspection.certifications.networkVerified;
-    const certified = Boolean(signature && gpsOk && netOk && inspection.certifications.qrScanned);
-    return { fileHash, signature, certified };
-  };
-
-  const takePhoto = async (kind: 'before' | 'after') => {
+  const savePhoto = async (kind: 'before' | 'after', photoUri: string) => {
     if (!inspection || !site) return;
     if (Platform.OS === 'web') return;
-
-    const perm = cameraPermission?.granted ? cameraPermission : await requestCameraPermission();
-    if (!perm?.granted) {
-      Alert.alert('Caméra refusée', 'La capture photo nécessite l’autorisation caméra.');
-      return;
-    }
 
     const prereq = await ensureCertPrereqs();
 
     const capturedAt = nowISODateTime();
-    const photo = await cameraRef.current?.takePictureAsync({ quality: 0.65, exif: false });
-    if (!photo?.uri) return;
-
     const lat = prereq?.lat;
     const lng = prereq?.lng;
     const distanceMeters = prereq?.distanceMeters;
-    const sig = await signPhoto(photo.uri, capturedAt, lat, lng, distanceMeters, prereq ? { gpsVerified: prereq.gpsVerified, networkVerified: prereq.networkVerified } : undefined);
+    const sig = await createSignedEvidence(photoUri, [capturedAt, site.id, lat, lng, distanceMeters]);
+    const certified = Boolean(sig.signature && (prereq ? prereq.gpsVerified : inspection.certifications.gpsVerified) && (prereq ? prereq.networkVerified : inspection.certifications.networkVerified) && inspection.certifications.qrScanned);
 
     dispatch({
       type: 'addInspectionPhoto',
@@ -169,14 +116,14 @@ export default function ControlDetailScreen() {
       photo: {
         id: `ph_${Math.random().toString(16).slice(2)}_${Date.now().toString(16)}`,
         kind,
-        uri: photo.uri,
+        uri: photoUri,
         capturedAt,
         lat,
         lng,
         distanceMeters: typeof distanceMeters === 'number' ? distanceMeters : undefined,
         fileHash: sig.fileHash,
         signature: sig.signature,
-        certified: sig.certified
+        certified
       }
     });
     setCameraMode(null);
@@ -204,6 +151,18 @@ export default function ControlDetailScreen() {
     if (inspection.certifications.photoCertified === allPhotosCertified) return;
     dispatch({ type: 'setInspectionCertifications', inspectionId: inspection.id, patch: { photoCertified: allPhotosCertified } });
   }, [allPhotosCertified, dispatch, inspection]);
+
+  useEffect(() => {
+    if (!inspection || !pendingCaptureKind) return;
+    setCameraMode({ kind: pendingCaptureKind });
+    setPendingCaptureKind(null);
+  }, [inspection, pendingCaptureKind]);
+
+  const startInspection = (openKind?: 'before' | 'after') => {
+    if (!control) return;
+    dispatch({ type: 'startInspection', plannedControlId: control.id });
+    if (openKind) setPendingCaptureKind(openKind);
+  };
 
   if (!control || !template) {
     return (
@@ -271,12 +230,25 @@ export default function ControlDetailScreen() {
         <Card className="mt-6">
           <Text className="text-[15px] font-semibold text-slate-900 dark:text-white">Prêt à démarrer</Text>
           <Text className="mt-1 text-[13px] text-slate-500 dark:text-slate-300">
-            Checklist, notation, photos avant/après et suivi des preuves.
+            {control.type === 'beforeAfter'
+              ? 'Ce contrôle demande une photo avant et une photo après, en plus de la checklist et des certifications.'
+              : 'Ce contrôle demande au moins une photo de preuve, la checklist, la note et les certifications.'}
           </Text>
+          <View className="mt-4 flex-row flex-wrap gap-2">
+            <Chip label={control.type === 'beforeAfter' ? '2 photos minimum' : '1 photo minimum'} tone="warning" />
+            <Chip label="QR requis" tone="neutral" />
+            <Chip label="GPS + réseau requis" tone="neutral" />
+          </View>
           <Button
             label="Démarrer le contrôle"
-            onPress={() => dispatch({ type: 'startInspection', plannedControlId: control.id })}
+            onPress={() => startInspection()}
             className="mt-4"
+          />
+          <Button
+            label={control.type === 'beforeAfter' ? 'Démarrer et ouvrir la photo avant' : 'Démarrer et ouvrir la caméra'}
+            variant="secondary"
+            onPress={() => startInspection(control.type === 'beforeAfter' ? 'before' : 'after')}
+            className="mt-3"
           />
         </Card>
       ) : (
@@ -315,6 +287,22 @@ export default function ControlDetailScreen() {
             <Text className="text-[14px] font-semibold text-slate-900 dark:text-white">Saisir un code QR</Text>
             <Icon name="chevron-right" size={18} color={isDark ? '#FFFFFF' : '#0F172A'} />
           </Pressable>
+
+          <SectionHeader title="Accès rapide" />
+          <View className="gap-3">
+            {control.type === 'beforeAfter' ? (
+              <View className="flex-row gap-3">
+                <Button label={`Photo avant (${beforeCount})`} left={<Icon name="camera" size={16} color="#FFFFFF" />} onPress={() => setCameraMode({ kind: 'before' })} className="flex-1" />
+                <Button label={`Photo après (${afterCount})`} variant="secondary" left={<Icon name="camera" size={16} color={isDark ? '#FFFFFF' : '#0F172A'} />} onPress={() => setCameraMode({ kind: 'after' })} className="flex-1" />
+              </View>
+            ) : (
+              <Button
+                label={`Prendre une photo de preuve (${inspection.photos.length})`}
+                left={<Icon name="camera" size={16} color="#FFFFFF" />}
+                onPress={() => setCameraMode({ kind: beforeCount > afterCount ? 'after' : 'before' })}
+              />
+            )}
+          </View>
 
           <SectionHeader title="Évaluation nominative" />
           <Card>
@@ -395,26 +383,40 @@ export default function ControlDetailScreen() {
             })}
           </View>
 
-          <SectionHeader title="Photos avant / après" />
+          <SectionHeader title={control.type === 'beforeAfter' ? 'Photos avant / après' : 'Preuves photo'} />
           <Card>
             <Text className="text-[14px] font-semibold text-slate-900 dark:text-white">Preuves</Text>
-            <Text className="mt-1 text-[13px] text-slate-500 dark:text-slate-300">Ajoute les photos prises sur place pour documenter l’intervention.</Text>
-            <View className="mt-4 flex-row gap-3">
-              <Pressable onPress={() => setCameraMode({ kind: 'before' })} className="flex-1 rounded-2xl bg-slate-100 dark:bg-slate-800 p-4 active:opacity-90">
+            <Text className="mt-1 text-[13px] text-slate-500 dark:text-slate-300">
+              {control.type === 'beforeAfter'
+                ? 'Ajoute les photos avant et après pour documenter l intervention.'
+                : 'Ajoute au moins une photo prise sur place pour justifier le contrôle.'}
+            </Text>
+            {control.type === 'beforeAfter' ? (
+              <View className="mt-4 flex-row gap-3">
+                <Pressable onPress={() => setCameraMode({ kind: 'before' })} className="flex-1 rounded-2xl bg-slate-100 dark:bg-slate-800 p-4 active:opacity-90">
+                  <View className="flex-row items-center justify-between">
+                    <Text className="text-[13px] font-semibold text-slate-800 dark:text-slate-100">Avant</Text>
+                    <Icon name="plus" size={16} color={isDark ? '#FFFFFF' : '#0F172A'} />
+                  </View>
+                  <Text className="mt-1 text-[12px] text-slate-500 dark:text-slate-300">{beforeCount} photo{beforeCount > 1 ? 's' : ''}</Text>
+                </Pressable>
+                <Pressable onPress={() => setCameraMode({ kind: 'after' })} className="flex-1 rounded-2xl bg-slate-100 dark:bg-slate-800 p-4 active:opacity-90">
+                  <View className="flex-row items-center justify-between">
+                    <Text className="text-[13px] font-semibold text-slate-800 dark:text-slate-100">Après</Text>
+                    <Icon name="plus" size={16} color={isDark ? '#FFFFFF' : '#0F172A'} />
+                  </View>
+                  <Text className="mt-1 text-[12px] text-slate-500 dark:text-slate-300">{afterCount} photo{afterCount > 1 ? 's' : ''}</Text>
+                </Pressable>
+              </View>
+            ) : (
+              <Pressable onPress={() => setCameraMode({ kind: 'before' })} className="mt-4 rounded-2xl bg-slate-100 dark:bg-slate-800 p-4 active:opacity-90">
                 <View className="flex-row items-center justify-between">
-                  <Text className="text-[13px] font-semibold text-slate-800 dark:text-slate-100">Avant</Text>
-                  <Icon name="plus" size={16} color={isDark ? '#FFFFFF' : '#0F172A'} />
+                  <Text className="text-[13px] font-semibold text-slate-800 dark:text-slate-100">Prendre une photo de preuve</Text>
+                  <Icon name="camera" size={18} color={isDark ? '#FFFFFF' : '#0F172A'} />
                 </View>
-                <Text className="mt-1 text-[12px] text-slate-500 dark:text-slate-300">{beforeCount} photo{beforeCount > 1 ? 's' : ''}</Text>
+                <Text className="mt-1 text-[12px] text-slate-500 dark:text-slate-300">{inspection.photos.length} photo{inspection.photos.length > 1 ? 's' : ''}</Text>
               </Pressable>
-              <Pressable onPress={() => setCameraMode({ kind: 'after' })} className="flex-1 rounded-2xl bg-slate-100 dark:bg-slate-800 p-4 active:opacity-90">
-                <View className="flex-row items-center justify-between">
-                  <Text className="text-[13px] font-semibold text-slate-800 dark:text-slate-100">Après</Text>
-                  <Icon name="plus" size={16} color={isDark ? '#FFFFFF' : '#0F172A'} />
-                </View>
-                <Text className="mt-1 text-[12px] text-slate-500 dark:text-slate-300">{afterCount} photo{afterCount > 1 ? 's' : ''}</Text>
-              </Pressable>
-            </View>
+            )}
             {inspection.photos.length > 0 ? (
               <View className="mt-4 gap-3">
                 {inspection.photos.slice(0, 4).map(p => (
@@ -431,7 +433,9 @@ export default function ControlDetailScreen() {
                     <View className="flex-row items-center">
                       <Image source={{ uri: p.uri }} style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: isDark ? '#111B21' : '#E2E8F0' }} />
                       <View className="ml-3">
-                        <Text className="text-[13px] font-semibold text-slate-900 dark:text-white">{p.kind === 'before' ? 'Avant' : 'Après'}</Text>
+                        <Text className="text-[13px] font-semibold text-slate-900 dark:text-white">
+                          {control.type === 'beforeAfter' ? (p.kind === 'before' ? 'Avant' : 'Après') : 'Preuve terrain'}
+                        </Text>
                         <Text className="mt-0.5 text-[12px] text-slate-500 dark:text-slate-300">
                           {p.capturedAt.slice(0, 16).replace('T', ' ')} • {p.certified ? 'certifiée' : 'non certifiée'}
                         </Text>
@@ -474,86 +478,19 @@ export default function ControlDetailScreen() {
             </Pressable>
           </View>
 
-          <Modal visible={Boolean(cameraMode)} transparent animationType="fade" onRequestClose={() => setCameraMode(null)}>
-            <View style={{ flex: 1, backgroundColor: overlay }}>
-              <View style={{ flex: 1 }}>
-                <View style={{ paddingTop: 12, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Pressable onPress={() => setCameraMode(null)} style={{ height: 42, paddingHorizontal: 14, borderRadius: 999, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'center' }}>
-                    <Text style={{ color: '#FFFFFF', fontWeight: '800' }}>Fermer</Text>
-                  </Pressable>
-                  <Text style={{ color: '#FFFFFF', fontWeight: '900' }}>
-                    {cameraMode?.kind === 'qr' ? 'Scanner QR' : cameraMode?.kind === 'before' ? 'Photo avant' : 'Photo après'}
-                  </Text>
-                  <View style={{ width: 72 }} />
-                </View>
-
-                {Platform.OS === 'web' ? (
-                  <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-                    <Text style={{ color: '#FFFFFF', fontWeight: '700', textAlign: 'center' }}>Capture indisponible sur Web.</Text>
-                  </View>
-                ) : (
-                  <>
-                    {!cameraPermission?.granted ? (
-                      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 18 }}>
-                        <Text style={{ color: '#FFFFFF', fontWeight: '700', textAlign: 'center' }}>
-                          Autorise la caméra pour prendre des preuves sur site.
-                        </Text>
-                        <Pressable
-                          onPress={() => requestCameraPermission()}
-                          style={{ marginTop: 16, height: 48, paddingHorizontal: 16, borderRadius: 16, backgroundColor: '#25D366', alignItems: 'center', justifyContent: 'center' }}
-                        >
-                          <Text style={{ color: '#0B141A', fontWeight: '900' }}>Autoriser la caméra</Text>
-                        </Pressable>
-                      </View>
-                    ) : (
-                      <CameraView
-                        ref={cameraRef}
-                        style={{ flex: 1, marginTop: 12, borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: 'hidden' }}
-                        facing="back"
-                        barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
-                        onBarcodeScanned={
-                          cameraMode?.kind === 'qr'
-                            ? (e: any) => {
-                                if (!e?.data) return;
-                                setCameraMode(null);
-                                setQr(String(e.data));
-                              }
-                            : undefined
-                        }
-                      >
-                        {cameraMode?.kind !== 'qr' ? (
-                          <View style={{ position: 'absolute', left: 0, right: 0, bottom: 18, alignItems: 'center' }}>
-                            <Pressable
-                              onPress={() => {
-                                if (cameraMode?.kind === 'before' || cameraMode?.kind === 'after') takePhoto(cameraMode.kind);
-                              }}
-                              style={{
-                                height: 64,
-                                width: 64,
-                                borderRadius: 999,
-                                backgroundColor: '#FFFFFF',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                              }}
-                            >
-                              <View style={{ height: 54, width: 54, borderRadius: 999, backgroundColor: '#25D366' }} />
-                            </Pressable>
-                            <Text style={{ marginTop: 10, color: 'rgba(255,255,255,0.85)', fontWeight: '700' }}>
-                              Appuyer pour capturer
-                            </Text>
-                          </View>
-                        ) : (
-                          <View style={{ position: 'absolute', left: 0, right: 0, bottom: 18, alignItems: 'center' }}>
-                            <Text style={{ color: 'rgba(255,255,255,0.9)', fontWeight: '800' }}>Vise le QR du site</Text>
-                          </View>
-                        )}
-                      </CameraView>
-                    )}
-                  </>
-                )}
-              </View>
-            </View>
-          </Modal>
+          <CameraCaptureModal
+            visible={Boolean(cameraMode)}
+            title={cameraMode?.kind === 'qr' ? 'Scanner QR' : cameraMode?.kind === 'before' ? 'Photo avant' : 'Photo après'}
+            mode={cameraMode?.kind === 'qr' ? 'qr' : 'photo'}
+            overlay={overlay}
+            onClose={() => setCameraMode(null)}
+            onBarcodeScanned={value => setQr(value)}
+            onPhotoCaptured={async uri => {
+              if (cameraMode?.kind === 'before' || cameraMode?.kind === 'after') {
+                await savePhoto(cameraMode.kind, uri);
+              }
+            }}
+          />
 
           <Modal visible={qrModalOpen} transparent animationType="fade" onRequestClose={() => setQrModalOpen(false)}>
             <Pressable onPress={() => setQrModalOpen(false)} style={{ flex: 1, backgroundColor: overlay, justifyContent: 'center', paddingHorizontal: 18 }}>

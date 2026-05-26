@@ -96,6 +96,7 @@ export default function ControlsScreen() {
                   </Text>
                   <View className="mt-3 flex-row gap-2">
                     <Chip label={ctrl.type === 'beforeAfter' ? 'Avant/Après' : 'Qualité'} tone="neutral" />
+                    <Chip label={ctrl.type === 'beforeAfter' ? 'Photos avant + après' : 'Photo de preuve requise'} tone="warning" />
                     <Chip label={`Assigné: ${ctrl.assigneeName}`} tone="brand" />
                   </View>
                 </View>

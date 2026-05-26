@@ -61,6 +61,17 @@ export interface InspectionPhoto {
   certified: boolean;
 }
 
+export interface IncidentPhoto {
+  id: string;
+  uri: string;
+  capturedAt: ISODateTime;
+  lat?: number;
+  lng?: number;
+  fileHash?: string;
+  signature?: string;
+  certified: boolean;
+}
+
 export interface Inspection {
   id: string;
   plannedControlId: string;
@@ -96,6 +107,7 @@ export interface Incident {
   title: string;
   description: string;
   assignedTo?: string;
+  photos: IncidentPhoto[];
 }
 
 export interface Session {

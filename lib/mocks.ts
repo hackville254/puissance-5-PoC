@@ -94,7 +94,8 @@ const incidents: Incident[] = [
     status: 'ouvert',
     title: 'Consommable absent (papier)',
     description: 'Rupture papier sanitaire au RDC. Réappro à effectuer immédiatement.',
-    assignedTo: 'Chef d’équipe'
+    assignedTo: 'Chef d’équipe',
+    photos: []
   },
   {
     id: 'inc_002',
@@ -105,7 +106,8 @@ const incidents: Incident[] = [
     status: 'en_cours',
     title: 'Odeur persistante',
     description: 'Odeur signalée dans le couloir nord. Vérifier siphons / désinfection.',
-    assignedTo: 'Référent site'
+    assignedTo: 'Référent site',
+    photos: []
   }
 ];
 
