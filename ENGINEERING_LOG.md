@@ -1,3 +1,11 @@
+### [2026-05-26T07:47:55Z] | Fond blanc explicite pour l authentification
+- **Contexte :** L'ecran d'authentification utilisait encore le fond clair par defaut de `Screen` (`slate-50`), ce qui donnait une teinte grisee au lieu d'un fond blanc net attendu.
+- **Modifications effectuees :**
+    - Forcage du fond clair a `bg-white` dans `app/sign-in.tsx` tout en conservant `dark:bg-slate-950` en mode sombre.
+- **Decisions Techniques :** J'ai choisi un override local sur l'ecran d'auth plutot qu'un changement global de `Screen` pour ne pas modifier involontairement le rendu des autres ecrans qui utilisent encore le fond standard de l'application.
+- **Impacts & Dependances :** Fichier touche: `app/sign-in.tsx`. Aucun impact logique, uniquement une correction visuelle du fond de page.
+- **Prochaines étapes :** Si tu veux une base blanche sur davantage d'ecrans, il faudra definir une convention explicite par famille d'ecrans plutot que d'appliquer un changement global.
+
 ### [2026-05-26T06:42:39Z] | Normalisation des formulaires creation et gestion
 - **Contexte :** Les ecrans de creation et d'edition utilisaient des champs heterogenes: `TextInput` bruts, choix presentes comme cartes ou chips selon l'ecran, sections desequilibrees et semantics de champs peu claires entre saisie libre, selection unique et pickers.
 - **Modifications effectuees :**

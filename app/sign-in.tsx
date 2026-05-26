@@ -23,7 +23,7 @@ export default function SignInScreen() {
   const canSubmit = useMemo(() => userName.trim().length >= 2, [userName]);
 
   return (
-    <Screen scroll={false}>
+    <Screen scroll={false} className="bg-white dark:bg-slate-950">
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1">
         <View className="flex-1 justify-center">
           <View className="mb-6 flex-row items-center justify-between">
