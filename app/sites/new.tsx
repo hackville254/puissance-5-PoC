@@ -1,11 +1,12 @@
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Alert, Pressable, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, Text, View } from 'react-native';
 import { useColorScheme } from 'nativewind';
 
 import { AppBar } from '../../components/ui/AppBar';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
+import { FormField, TextField } from '../../components/ui/FormControls';
 import { Icon } from '../../components/ui/Icon';
 import { Screen } from '../../components/ui/Screen';
 import { SectionHeader } from '../../components/ui/SectionHeader';
@@ -93,16 +94,19 @@ export default function NewSiteScreen() {
 
       <SectionHeader title="Informations" />
       <Card>
-        <Text className="text-[12px] font-semibold text-slate-600 dark:text-slate-300">Nom</Text>
-        <TextInput accessibilityLabel="Nom du site" value={name} onChangeText={setName} className="mt-2 text-[15px] text-slate-900 dark:text-white" />
+        <FormField label="Nom">
+          <TextField accessibilityLabel="Nom du site" value={name} onChangeText={setName} autoCapitalize="words" />
+        </FormField>
 
-        <Text className="mt-4 text-[12px] font-semibold text-slate-600 dark:text-slate-300">Adresse</Text>
-        <TextInput accessibilityLabel="Adresse du site" value={address} onChangeText={setAddress} className="mt-2 text-[15px] text-slate-900 dark:text-white" />
+        <FormField label="Adresse" className="mt-4">
+          <TextField accessibilityLabel="Adresse du site" value={address} onChangeText={setAddress} autoCapitalize="words" />
+        </FormField>
 
-        <Text className="mt-4 text-[12px] font-semibold text-slate-600 dark:text-slate-300">Ville</Text>
-        <TextInput accessibilityLabel="Ville du site" value={city} onChangeText={setCity} className="mt-2 text-[15px] text-slate-900 dark:text-white" />
+        <FormField label="Ville" className="mt-4">
+          <TextField accessibilityLabel="Ville du site" value={city} onChangeText={setCity} autoCapitalize="words" />
+        </FormField>
 
-        <Text className="mt-4 text-[12px] font-semibold text-slate-600 dark:text-slate-300">Tags</Text>
+        <FormField label="Tags" hint="Utilise des tags pour typer le site ou ses zones." className="mt-4">
         <View className="mt-2 flex-row flex-wrap gap-2">
           {tags.length === 0 ? (
             <Text className="text-[13px] text-slate-500 dark:text-slate-300">Ajoute des tags (type de site, zone, etc.).</Text>
@@ -123,15 +127,16 @@ export default function NewSiteScreen() {
           )}
         </View>
         <View className="mt-3 flex-row items-center gap-2">
-          <View className="flex-1 rounded-2xl bg-slate-50 dark:bg-slate-800 px-4 py-3">
-            <TextInput
+          <View className="flex-1">
+            <TextField
               value={tagInput}
               onChangeText={setTagInput}
               onSubmitEditing={() => addTag(tagInput)}
               returnKeyType="done"
-              placeholder="Ex: Sanitaires, Hall, Open space…"
-              placeholderTextColor={isDark ? 'rgba(255,255,255,0.45)' : '#94A3B8'}
-              className="text-[14px] text-slate-900 dark:text-white"
+              placeholder="Ex: Sanitaires, Hall, Open space"
+              autoCapitalize="words"
+              autoCorrect={false}
+              inputClassName="text-[14px]"
             />
           </View>
           <Pressable
@@ -154,21 +159,24 @@ export default function NewSiteScreen() {
             </Pressable>
           ))}
         </View>
+        </FormField>
       </Card>
 
       <SectionHeader title="Géofence" />
       <Card>
         <View className="flex-row gap-3">
           <View className="flex-1">
-            <Text className="text-[12px] font-semibold text-slate-600 dark:text-slate-300">Lat</Text>
-            <TextInput value={lat} onChangeText={setLat} keyboardType="numbers-and-punctuation" className="mt-2 text-[15px] text-slate-900 dark:text-white" />
+            <FormField label="Latitude">
+              <TextField value={lat} onChangeText={setLat} keyboardType="numbers-and-punctuation" autoCapitalize="none" autoCorrect={false} />
+            </FormField>
           </View>
           <View className="flex-1">
-            <Text className="text-[12px] font-semibold text-slate-600 dark:text-slate-300">Lng</Text>
-            <TextInput value={lng} onChangeText={setLng} keyboardType="numbers-and-punctuation" className="mt-2 text-[15px] text-slate-900 dark:text-white" />
+            <FormField label="Longitude">
+              <TextField value={lng} onChangeText={setLng} keyboardType="numbers-and-punctuation" autoCapitalize="none" autoCorrect={false} />
+            </FormField>
           </View>
         </View>
-        <Text className="mt-4 text-[12px] font-semibold text-slate-600 dark:text-slate-300">Rayon (m)</Text>
+        <FormField label="Rayon" hint="Distance en metres autour du site." className="mt-4">
         <View className="mt-2 flex-row items-center gap-2">
           <Pressable
             accessibilityRole="button"
@@ -178,8 +186,8 @@ export default function NewSiteScreen() {
           >
             <Icon name="minus" size={18} color={isDark ? '#FFFFFF' : '#0F172A'} />
           </Pressable>
-          <View className="flex-1 rounded-2xl bg-slate-50 dark:bg-slate-800 px-4 py-3">
-            <TextInput value={radius} onChangeText={setRadius} keyboardType="number-pad" className="text-[15px] text-slate-900 dark:text-white" />
+          <View className="flex-1">
+            <TextField value={radius} onChangeText={setRadius} keyboardType="number-pad" autoCapitalize="none" autoCorrect={false} />
           </View>
           <Pressable
             accessibilityRole="button"
@@ -201,6 +209,7 @@ export default function NewSiteScreen() {
             </Pressable>
           ))}
         </View>
+        </FormField>
       </Card>
 
       <SectionHeader title="Aperçu" />

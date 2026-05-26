@@ -1,13 +1,13 @@
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Alert, Modal, Platform, Pressable, Text, TextInput, View } from 'react-native';
+import { Alert, Modal, Platform, Pressable, Text, View } from 'react-native';
 import { useColorScheme } from 'nativewind';
 
 import { AppBar } from '../../../components/ui/AppBar';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
 import { Chip } from '../../../components/ui/Chip';
-import { Icon } from '../../../components/ui/Icon';
+import { ChoiceBadge, ChoiceCard, FormField, PickerField, SearchField, TextField } from '../../../components/ui/FormControls';
 import { Screen } from '../../../components/ui/Screen';
 import { SectionHeader } from '../../../components/ui/SectionHeader';
 import type { Severity } from '../../../lib/models';
@@ -156,45 +156,27 @@ export default function NewIncidentScreen() {
 
       <SectionHeader title="Site" />
       <Card>
-        <View className="flex-row items-center rounded-2xl bg-slate-50 dark:bg-slate-800 px-4 py-3">
-          <Icon name="building" size={18} color={isDark ? 'rgba(255,255,255,0.8)' : '#64748B'} />
-          <TextInput
+        <FormField label="Site concerné" hint="Recherche un site puis sélectionne-le dans la liste.">
+          <SearchField
             value={siteQuery}
             onChangeText={setSiteQuery}
             accessibilityLabel="Recherche de site"
-            placeholder="Rechercher un site…"
-            placeholderTextColor={isDark ? 'rgba(255,255,255,0.45)' : '#94A3B8'}
-            className="ml-3 flex-1 text-[14px] text-slate-900 dark:text-white"
+            placeholder="Rechercher un site"
+            onClear={() => setSiteQuery('')}
           />
-          {siteQuery.trim().length > 0 ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Effacer la recherche"
-              onPress={() => setSiteQuery('')}
-              className="h-9 w-9 items-center justify-center rounded-full bg-white/70 dark:bg-white/10"
-            >
-              <Icon name="x" size={16} color={isDark ? '#FFFFFF' : '#0F172A'} />
-            </Pressable>
-          ) : null}
-        </View>
-        <View className="mt-3 flex-row flex-wrap gap-2">
+        </FormField>
+        <View className="mt-3 gap-2">
           {filteredSites.map(s => {
             const selected = s.id === siteId;
             return (
-              <Pressable
+              <ChoiceCard
                 key={s.id}
+                title={s.name}
+                description={`${s.city} • ${s.address}`}
+                selected={selected}
                 onPress={() => setSiteId(s.id)}
-                accessibilityRole="button"
-                accessibilityLabel={`Sélectionner le site ${s.name}`}
-                className={selected ? 'rounded-2xl bg-brand-600 px-3 py-2' : 'rounded-2xl bg-slate-100 dark:bg-slate-800 px-3 py-2'}
-              >
-                <Text className={selected ? 'text-[13px] font-semibold text-white' : 'text-[13px] font-semibold text-slate-800 dark:text-slate-100'}>
-                  {s.name}
-                </Text>
-                <Text className={selected ? 'mt-0.5 text-[11px] text-white/80' : 'mt-0.5 text-[11px] text-slate-500 dark:text-slate-300'}>
-                  {s.city}
-                </Text>
-              </Pressable>
+                badge={selected ? <ChoiceBadge label="Sélectionné" tone="brand" /> : undefined}
+              />
             );
           })}
         </View>
@@ -205,60 +187,38 @@ export default function NewIncidentScreen() {
         {Platform.OS === 'web' ? (
           <View className="flex-row gap-3">
             <View className="flex-1">
-              <Text className="text-[12px] font-semibold text-slate-600 dark:text-slate-300">Date (YYYY-MM-DD)</Text>
-              <TextInput value={occurredDate} onChangeText={setOccurredDate} className="mt-2 text-[15px] text-slate-900 dark:text-white" />
+              <FormField label="Date" hint="Format AAAA-MM-JJ">
+                <TextField value={occurredDate} onChangeText={setOccurredDate} keyboardType="numbers-and-punctuation" autoCapitalize="none" autoCorrect={false} />
+              </FormField>
             </View>
             <View className="flex-1">
-              <Text className="text-[12px] font-semibold text-slate-600 dark:text-slate-300">Heure (HH:MM)</Text>
-              <TextInput value={occurredTime} onChangeText={setOccurredTime} className="mt-2 text-[15px] text-slate-900 dark:text-white" />
+              <FormField label="Heure" hint="Format HH:MM">
+                <TextField value={occurredTime} onChangeText={setOccurredTime} keyboardType="numbers-and-punctuation" autoCapitalize="none" autoCorrect={false} />
+              </FormField>
             </View>
           </View>
         ) : (
           <>
             <View className="flex-row gap-3">
               <View className="flex-1">
-                <Text className="text-[12px] font-semibold text-slate-600 dark:text-slate-300">Date</Text>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Choisir la date du constat"
-                  onPress={() => openPicker('occurredDate')}
-                  className="mt-2 flex-row items-center justify-between rounded-2xl bg-slate-50 dark:bg-slate-800 px-4 py-4"
-                >
-                  <View>
-                    <Text className="text-[15px] font-semibold text-slate-900 dark:text-white">{shortDateLabel(occurredDate)}</Text>
-                    <Text className="mt-0.5 text-[12px] text-slate-500 dark:text-slate-300">{occurredDate}</Text>
-                  </View>
-                  <Icon name="calendar" size={20} color={isDark ? '#FFFFFF' : '#111827'} />
-                </Pressable>
+                <FormField label="Date">
+                  <PickerField value={shortDateLabel(occurredDate)} description={occurredDate} icon="calendar" onPress={() => openPicker('occurredDate')} />
+                </FormField>
               </View>
               <View className="flex-1">
-                <Text className="text-[12px] font-semibold text-slate-600 dark:text-slate-300">Heure</Text>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Choisir l’heure du constat"
-                  onPress={() => openPicker('occurredTime')}
-                  className="mt-2 flex-row items-center justify-between rounded-2xl bg-slate-50 dark:bg-slate-800 px-4 py-4"
-                >
-                  <Text className="text-[15px] font-semibold text-slate-900 dark:text-white">{occurredTime}</Text>
-                  <Icon name="check" size={18} color={isDark ? 'rgba(255,255,255,0.75)' : '#6B7280'} />
-                </Pressable>
+                <FormField label="Heure">
+                  <PickerField value={occurredTime} icon="chevron-right" onPress={() => openPicker('occurredTime')} />
+                </FormField>
               </View>
             </View>
 
-            <View className="mt-4">
-              <Text className="text-[12px] font-semibold text-slate-600 dark:text-slate-300">Échéance de correction (optionnel)</Text>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Choisir une échéance"
+            <FormField label="Échéance de correction" hint="Optionnel, pour le suivi et les rappels.">
+              <PickerField
+                value={dueDate ? shortDateLabel(dueDate) : 'Aucune'}
+                description={dueDate ?? 'Rappel et suivi exploitation'}
+                icon="chevron-right"
                 onPress={() => openPicker('dueDate')}
-                className="mt-2 flex-row items-center justify-between rounded-2xl bg-slate-50 dark:bg-slate-800 px-4 py-4"
-              >
-                <View>
-                  <Text className="text-[15px] font-semibold text-slate-900 dark:text-white">{dueDate ? shortDateLabel(dueDate) : 'Aucune'}</Text>
-                  <Text className="mt-0.5 text-[12px] text-slate-500 dark:text-slate-300">{dueDate ?? 'Rappel et suivi exploitation'}</Text>
-                </View>
-                <Icon name="chevron-right" size={20} color={isDark ? '#FFFFFF' : '#111827'} />
-              </Pressable>
+              />
 
               <View className="mt-3 flex-row gap-2">
                 <Pressable
@@ -281,7 +241,7 @@ export default function NewIncidentScreen() {
                   </Pressable>
                 ))}
               </View>
-            </View>
+            </FormField>
           </>
         )}
       </Card>
@@ -290,43 +250,39 @@ export default function NewIncidentScreen() {
       <View className="flex-row gap-2">
         {severities.map(s => {
           const selected = s.value === severity;
-          const icon = s.value === 'critique' ? 'triangle-alert' : s.value === 'majeure' ? 'circle-alert' : 'badge-check';
           return (
-            <Card
+            <ChoiceCard
               key={s.value}
+              title={s.label}
+              description={s.value}
+              selected={selected}
               onPress={() => setSeverity(s.value)}
-              className={selected ? 'flex-1 px-4 py-3 bg-brand-600 border-brand-600' : 'flex-1 px-4 py-3'}
-            >
-              <View className="flex-row items-center justify-between">
-                <View className="flex-row items-center">
-                  <Icon name={icon} size={16} color={selected ? '#FFFFFF' : isDark ? '#FFFFFF' : '#0F172A'} />
-                  <Text className={selected ? 'ml-2 text-[13px] font-semibold text-white' : 'ml-2 text-[13px] font-semibold text-slate-900 dark:text-white'}>
-                    {s.label}
-                  </Text>
-                </View>
-                <Chip label={s.value} tone={s.tone} />
-              </View>
-            </Card>
+              className="flex-1"
+              badge={<ChoiceBadge label={s.value} tone={s.tone} />}
+            />
           );
         })}
       </View>
 
       <SectionHeader title="Détails" />
       <Card>
-        <Text className="text-[12px] font-semibold text-slate-600 dark:text-slate-300">Titre</Text>
-        <TextInput accessibilityLabel="Titre de l’incident" value={title} onChangeText={setTitle} className="mt-2 text-[15px] text-slate-900 dark:text-white" />
+        <FormField label="Titre">
+          <TextField accessibilityLabel="Titre de l’incident" value={title} onChangeText={setTitle} autoCapitalize="sentences" />
+        </FormField>
 
-        <Text className="mt-4 text-[12px] font-semibold text-slate-600 dark:text-slate-300">Description</Text>
-        <TextInput
-          value={description}
-          onChangeText={setDescription}
-          accessibilityLabel="Description de l’incident"
-          multiline
-          className="mt-2 min-h-[96px] text-[14px] text-slate-900 dark:text-white"
-        />
+        <FormField label="Description" className="mt-4">
+          <TextField
+            value={description}
+            onChangeText={setDescription}
+            accessibilityLabel="Description de l’incident"
+            multiline
+            inputClassName="text-[14px]"
+          />
+        </FormField>
 
-        <Text className="mt-4 text-[12px] font-semibold text-slate-600 dark:text-slate-300">Assigné à</Text>
-        <TextInput accessibilityLabel="Responsable assigné" value={assignedTo} onChangeText={setAssignedTo} className="mt-2 text-[15px] text-slate-900 dark:text-white" />
+        <FormField label="Assigné à" className="mt-4">
+          <TextField accessibilityLabel="Responsable assigné" value={assignedTo} onChangeText={setAssignedTo} autoCapitalize="words" autoCorrect={false} />
+        </FormField>
       </Card>
 
       <SectionHeader title="Aperçu" />

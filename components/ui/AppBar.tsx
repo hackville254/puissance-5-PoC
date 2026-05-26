@@ -91,33 +91,6 @@ function ActionButton({
   );
 }
 
-function MetaPill({
-  label,
-  colorScheme,
-  tone = 'default'
-}: {
-  label: string;
-  colorScheme: 'light' | 'dark';
-  tone?: 'default' | 'accent';
-}) {
-  const isDark = colorScheme === 'dark';
-  const isAccent = tone === 'accent';
-
-  return (
-    <View
-      className="rounded-full border px-3 py-1"
-      style={{
-        borderColor: isAccent ? (isDark ? 'rgba(96,165,250,0.24)' : '#BFDBFE') : isDark ? 'rgba(255,255,255,0.08)' : '#D6E2FF',
-        backgroundColor: isAccent ? (isDark ? 'rgba(37,99,235,0.18)' : '#EFF6FF') : isDark ? 'rgba(255,255,255,0.04)' : '#FFFFFF'
-      }}
-    >
-      <Text className={cn('text-[11px] font-semibold tracking-[0.35px]', isAccent ? 'text-brand-200 dark:text-brand-100' : isDark ? 'text-white/88' : 'text-slate-700')}>
-        {label}
-      </Text>
-    </View>
-  );
-}
-
 function HelpBullet({
   index,
   text,
@@ -436,7 +409,7 @@ export function AppBar({
           accessibilityLabel="Fermer la presentation de la page"
           accessibilityHint="Ferme la fenetre d'aide en cliquant sur le fond"
           onPress={() => setHelpOpen(false)}
-          style={{ flex: 1, backgroundColor: 'rgba(2, 6, 23, 0.68)', justifyContent: compact ? 'flex-end' : 'center', padding: 12 }}
+          style={{ flex: 1, backgroundColor: 'rgba(2, 6, 23, 0.72)', justifyContent: compact ? 'flex-end' : 'center', padding: 12 }}
         >
           <View style={{ alignItems: 'center' }}>
             <Pressable onPress={() => {}} style={{ width: '100%', maxWidth: modalMaxWidth }}>
@@ -450,33 +423,37 @@ export function AppBar({
                   shadowRadius: 24,
                   shadowOffset: { width: 0, height: 12 },
                   elevation: 10,
-                  gap: 16
+                  gap: 14
                 }}
               >
-                <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 14 }}>
-                  <View className={cn('h-12 w-12 items-center justify-center rounded-2xl', resolvedScheme === 'dark' ? 'bg-brand-500/16' : 'bg-brand-50')}>
-                    <Icon name="help-circle" size={24} color={resolvedScheme === 'dark' ? '#BFDBFE' : '#1D4ED8'} strokeWidth={2.4} />
-                  </View>
-
+                <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
                   <View style={{ flex: 1, minWidth: 0 }}>
-                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                      <MetaPill label="Aide" colorScheme={resolvedScheme} tone="accent" />
-                      <MetaPill label={roleLabel} colorScheme={resolvedScheme} />
-                    </View>
-                    <Text className={cn('mt-3 text-[24px] font-extrabold', primaryTextClassName)} accessibilityRole="header" maxFontSizeMultiplier={1.2}>
+                    <Text className={cn('text-[24px] font-extrabold', primaryTextClassName)} accessibilityRole="header" maxFontSizeMultiplier={1.2}>
                       {help?.title ?? 'Aide'}
                     </Text>
-                    <Text className={cn('mt-2 text-[14px] leading-5', mutedTextClassName)} maxFontSizeMultiplier={1.2} numberOfLines={2}>
+                    <Text className={cn('mt-2 text-[14px] leading-5', mutedTextClassName)} maxFontSizeMultiplier={1.2}>
                       {helpSummary}
                     </Text>
                   </View>
 
-                  <ActionButton
-                    action={{ icon: 'x', label: 'Fermer', onPress: () => setHelpOpen(false) }}
-                    showLabel={false}
-                    colorScheme={resolvedScheme}
-                    size={buttonSize}
-                  />
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Fermer l'aide"
+                    onPress={() => setHelpOpen(false)}
+                    style={({ pressed }) => ({
+                      width: buttonSize,
+                      height: buttonSize,
+                      borderRadius: 16,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      opacity: pressed ? 0.85 : 1,
+                      backgroundColor: resolvedScheme === 'dark' ? 'rgba(255,255,255,0.06)' : '#F8FAFC',
+                      borderWidth: 1,
+                      borderColor: resolvedScheme === 'dark' ? 'rgba(255,255,255,0.08)' : '#E2E8F0'
+                    })}
+                  >
+                    <Icon name="x" size={18} color={resolvedScheme === 'dark' ? '#FFFFFF' : '#0F172A'} />
+                  </Pressable>
                 </View>
 
                 <View className={cn('rounded-2xl border p-4', resolvedScheme === 'dark' ? 'bg-white/5 border-white/8' : 'bg-slate-50 border-slate-100')} style={{ flexShrink: 1 }}>
@@ -489,13 +466,6 @@ export function AppBar({
                 </View>
 
                 <View className={cn('rounded-2xl border p-4', resolvedScheme === 'dark' ? 'bg-slate-900 border-white/10' : 'bg-slate-50 border-slate-200')} style={{ gap: 12 }}>
-                  <View>
-                    <Text className={cn('text-[15px] font-semibold', primaryTextClassName)}>Affichage automatique</Text>
-                    <Text className={cn('mt-1 text-[13px] leading-5', mutedTextClassName)} numberOfLines={2}>
-                      Choisis si tu veux revoir cette présentation.
-                    </Text>
-                  </View>
-
                   <Pressable
                     accessibilityRole="checkbox"
                     accessibilityLabel="Ne plus afficher cette presentation automatiquement"
@@ -519,10 +489,12 @@ export function AppBar({
                       </View>
                       <View style={{ flex: 1 }}>
                         <Text className={cn('text-[14px] font-semibold', primaryTextClassName)}>Ne plus afficher automatiquement</Text>
+                        <Text className={cn('mt-1 text-[13px] leading-5', mutedTextClassName)}>
+                          {hideNextTime ? 'Cette aide restera masquee lors des prochaines visites.' : 'Cette aide s affichera a nouveau a l ouverture de la page.'}
+                        </Text>
                       </View>
                     </View>
                   </Pressable>
-
                 </View>
 
                 <View style={{ flexDirection: compact ? 'column' : 'row', gap: 10 }}>
@@ -532,14 +504,6 @@ export function AppBar({
                     colorScheme={resolvedScheme}
                     size={buttonSize}
                     tone="primary"
-                    stretch
-                    onPress={() => setHelpOpen(false)}
-                  />
-                  <ActionButton
-                    action={{ icon: 'x', label: 'Fermer', onPress: () => setHelpOpen(false) }}
-                    showLabel
-                    colorScheme={resolvedScheme}
-                    size={buttonSize}
                     stretch
                     onPress={() => setHelpOpen(false)}
                   />

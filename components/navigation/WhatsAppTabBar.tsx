@@ -310,7 +310,7 @@ export function WhatsAppTabBar(props: TabBarProps) {
               backgroundColor: isDark ? '#0F172A' : '#FFFFFF',
               borderTopLeftRadius: 20,
               borderTopRightRadius: 20,
-              paddingBottom: bottomPad + 4,
+              paddingBottom: bottomPad + 6,
               borderTopWidth: 1,
               borderTopColor: border
             }}
@@ -326,17 +326,7 @@ export function WhatsAppTabBar(props: TabBarProps) {
               />
             </View>
 
-            <View style={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Text style={{ fontSize: 16, fontWeight: '800', color: isDark ? '#FFFFFF' : '#111827' }}>Raccourcis</Text>
-              <Pressable
-                onPress={closeSheet}
-                style={{ height: 36, width: 36, alignItems: 'center', justifyContent: 'center', borderRadius: 12, backgroundColor: isDark ? '#111827' : '#F1F5F9' }}
-              >
-                <Icon name="x" size={18} color={isDark ? '#FFFFFF' : '#111827'} strokeWidth={2.4} />
-              </Pressable>
-            </View>
-
-            <View style={{ paddingHorizontal: 12, paddingBottom: 6 }}>
+            <View style={{ paddingHorizontal: 12, paddingTop: 14, flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
               {actions.map(a => (
                 <Pressable
                   key={a.label}
@@ -345,29 +335,42 @@ export function WhatsAppTabBar(props: TabBarProps) {
                     a.onPress();
                   }}
                   style={({ pressed }) => ({
-                    flexDirection: 'row',
+                    width: '48%',
                     alignItems: 'center',
-                    paddingVertical: 13,
+                    justifyContent: 'center',
+                    paddingVertical: 16,
                     paddingHorizontal: 12,
                     borderRadius: 16,
                     opacity: pressed ? 0.88 : 1,
-                    backgroundColor: pressed ? (isDark ? 'rgba(255,255,255,0.04)' : '#F8FAFC') : 'transparent'
+                    borderWidth: 1,
+                    borderColor: isDark ? '#1E293B' : '#E2E8F0',
+                    backgroundColor: pressed ? (isDark ? '#111827' : '#F8FAFC') : isDark ? '#0B1220' : '#FFFFFF'
                   })}
                 >
                   <View
                     style={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: 12,
+                      width: 40,
+                      height: 40,
+                      borderRadius: 14,
                       backgroundColor: isDark ? '#111827' : '#F1F5F9',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      marginRight: 12
+                      marginBottom: 8
                     }}
                   >
                     <Icon name={a.icon} size={18} color={active} strokeWidth={2.4} />
                   </View>
-                  <Text style={{ fontSize: 14, fontWeight: '700', color: isDark ? '#FFFFFF' : '#111827' }}>{a.label}</Text>
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      lineHeight: 18,
+                      fontWeight: '700',
+                      color: isDark ? '#FFFFFF' : '#111827',
+                      textAlign: 'center'
+                    }}
+                  >
+                    {a.label}
+                  </Text>
                 </Pressable>
               ))}
             </View>

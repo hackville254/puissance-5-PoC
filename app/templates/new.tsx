@@ -1,12 +1,13 @@
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Alert, Pressable, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, Text, View } from 'react-native';
 import { useColorScheme } from 'nativewind';
 
 import { AppBar } from '../../components/ui/AppBar';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Chip } from '../../components/ui/Chip';
+import { ChoiceCard, FormField, TextField } from '../../components/ui/FormControls';
 import { Icon } from '../../components/ui/Icon';
 import { Screen } from '../../components/ui/Screen';
 import { SectionHeader } from '../../components/ui/SectionHeader';
@@ -92,21 +93,23 @@ export default function NewTemplateScreen() {
 
       <SectionHeader title="Nom" />
       <Card>
-        <TextInput accessibilityLabel="Nom du modèle" value={name} onChangeText={setName} className="text-[15px] text-slate-900 dark:text-white" />
+        <FormField label="Nom du modèle">
+          <TextField accessibilityLabel="Nom du modèle" value={name} onChangeText={setName} autoCapitalize="sentences" />
+        </FormField>
       </Card>
 
       <SectionHeader title="Ajouter un critère" />
       <Card>
-        <Text className="text-[12px] font-semibold text-slate-600 dark:text-slate-300">Libellé</Text>
-        <TextInput
-          value={itemLabel}
-          onChangeText={setItemLabel}
-          onSubmitEditing={addItem}
-          returnKeyType="done"
-          placeholder="Ex: Vitrerie, Odeur, Consommables…"
-          placeholderTextColor="#94A3B8"
-          className="mt-2 text-[15px] text-slate-900 dark:text-white"
-        />
+        <FormField label="Libellé" hint="Nom du critère de controle.">
+          <TextField
+            value={itemLabel}
+            onChangeText={setItemLabel}
+            onSubmitEditing={addItem}
+            returnKeyType="done"
+            placeholder="Ex: Vitrerie, Odeur, Consommables"
+            autoCapitalize="sentences"
+          />
+        </FormField>
         <View className="mt-3 flex-row flex-wrap gap-2">
           {['Sol propre', 'Sanitaires conformes', 'Vitrerie', 'Consommables', 'Déchets évacués', 'Désinfection effectuée'].map(p => (
             <Pressable
@@ -121,11 +124,11 @@ export default function NewTemplateScreen() {
             </Pressable>
           ))}
         </View>
+        <View className="mt-4 flex-row gap-2">
+          <ChoiceCard title="Critique" description="Bloquant pour la conformite" selected={critical} onPress={() => setCritical(true)} className="flex-1" />
+          <ChoiceCard title="Optionnel" description="Point de controle secondaire" selected={!critical} onPress={() => setCritical(false)} className="flex-1" />
+        </View>
         <View className="mt-4 flex-row items-center justify-between">
-          <Pressable onPress={() => setCritical(v => !v)} className="flex-row items-center">
-            <Chip label={critical ? 'Critique' : 'Optionnel'} tone={critical ? 'danger' : 'neutral'} />
-            <Text className="ml-3 text-[13px] text-slate-600 dark:text-slate-300">Appuyer pour basculer</Text>
-          </Pressable>
           <Button
             label="Ajouter"
             onPress={addItem}

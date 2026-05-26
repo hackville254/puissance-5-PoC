@@ -1,3 +1,23 @@
+### [2026-05-26T06:42:39Z] | Normalisation des formulaires creation et gestion
+- **Contexte :** Les ecrans de creation et d'edition utilisaient des champs heterogenes: `TextInput` bruts, choix presentes comme cartes ou chips selon l'ecran, sections desequilibrees et semantics de champs peu claires entre saisie libre, selection unique et pickers.
+- **Modifications effectuees :**
+    - Creation de `components/ui/FormControls.tsx` avec des briques communes: `FormField`, `TextField`, `SearchField`, `PickerField`, `ChoiceCard`, `ChoiceBadge`.
+    - Refonte des formulaires `controls/new`, `controls/edit/[id]`, `incidents/new`, `incidents/edit/[id]`, `sites/new`, `templates/new`, `templates/[id]` pour utiliser une structure plus symetrique.
+    - Clarification des types d'entree: recherche de site comme recherche + liste de selection, dates/heures comme pickers ou champs contraints, severites/statuts/types comme choix uniques explicites, champs texte libres reserves aux vrais contenus textuels.
+- **Decisions Techniques :** J'ai centralise les primitives de formulaire plutot que de corriger chaque ecran independamment. Cela reduit les divergences futures, stabilise les etats selectionnes et rend plus simple l'introduction ulterieure de vrais selecteurs ou combobox si necessaire.
+- **Impacts & Dependances :** Fichiers touches: `components/ui/FormControls.tsx`, `app/(tabs)/controls/new.tsx`, `app/(tabs)/controls/edit/[id].tsx`, `app/(tabs)/incidents/new.tsx`, `app/(tabs)/incidents/edit/[id].tsx`, `app/sites/new.tsx`, `app/templates/new.tsx`, `app/templates/[id].tsx`. Les donnees et workflows restent identiques, la presentation et la semantique des champs sont harmonisees.
+- **Prochaines étapes :** Etendre la meme logique aux filtres de listes (`planning`, `controls`, `incidents`) et aux ecrans de detail/edition restants pour obtenir un systeme de formulaires integralement coherent.
+
+### [2026-05-26T06:22:14Z] | Rationalisation finale de la popup du menu bas
+- **Contexte :** La popup du menu bas restait encore un peu verbeuse avec un en-tete et des controles redondants alors que l'interaction attendue est un acces direct a des raccourcis.
+- **Modifications effectuees :**
+    - Suppression du titre et du bouton de fermeture dedies dans `components/navigation/WhatsAppTabBar.tsx`.
+    - Recomposition de la popup sous forme de grille de raccourcis plus compacte et plus lisible.
+    - Simplification des cartes d'action avec un centrage propre, un contraste stable et moins de decoration.
+- **Decisions Techniques :** J'ai garde uniquement les elements utiles a l'action. La fermeture reste naturellement assuree par le clic hors popup et par la selection d'un raccourci, ce qui reduit le bruit visuel sans perdre en utilisabilite.
+- **Impacts & Dependances :** Fichier touche: `components/navigation/WhatsAppTabBar.tsx`. Aucun impact sur la navigation ou les droits, uniquement sur la presentation de la popup.
+- **Prochaines étapes :** Verifier sur petits ecrans si la grille de raccourcis merite une seconde ligne mieux equilibree selon le nombre d'actions visibles par role.
+
 ### [2026-05-26T06:14:50Z] | Uniformisation des modales et de l'ecran de connexion
 - **Contexte :** Apres la simplification du header et de la navigation basse, la modal d'actions, la modal d'aide et l'ecran de connexion conservaient encore une presentation trop particuliere par rapport au reste de l'application.
 - **Modifications effectuees :**

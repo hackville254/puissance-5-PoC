@@ -1,13 +1,12 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Alert, Modal, Platform, Pressable, Text, TextInput, View } from 'react-native';
+import { Alert, Modal, Platform, Pressable, Text, View } from 'react-native';
 import { useColorScheme } from 'nativewind';
 
 import { AppBar } from '../../../../components/ui/AppBar';
 import { Button } from '../../../../components/ui/Button';
 import { Card } from '../../../../components/ui/Card';
-import { Chip } from '../../../../components/ui/Chip';
-import { Icon } from '../../../../components/ui/Icon';
+import { ChoiceBadge, ChoiceCard, FormField, PickerField, TextField } from '../../../../components/ui/FormControls';
 import { Screen } from '../../../../components/ui/Screen';
 import { SectionHeader } from '../../../../components/ui/SectionHeader';
 import type { IncidentStatus, Severity } from '../../../../lib/models';
@@ -169,48 +168,41 @@ export default function EditIncidentScreen() {
         {Platform.OS === 'web' ? (
           <View className="flex-row gap-3">
             <View className="flex-1">
-              <Text className="text-[12px] font-semibold text-slate-600 dark:text-slate-300">Date (YYYY-MM-DD)</Text>
-              <TextInput value={occurredDate} onChangeText={setOccurredDate} className="mt-2 text-[15px] text-slate-900 dark:text-white" />
+              <FormField label="Date" hint="Format AAAA-MM-JJ">
+                <TextField value={occurredDate} onChangeText={setOccurredDate} keyboardType="numbers-and-punctuation" autoCapitalize="none" autoCorrect={false} />
+              </FormField>
             </View>
             <View className="flex-1">
-              <Text className="text-[12px] font-semibold text-slate-600 dark:text-slate-300">Heure (HH:MM)</Text>
-              <TextInput value={occurredTime} onChangeText={setOccurredTime} className="mt-2 text-[15px] text-slate-900 dark:text-white" />
+              <FormField label="Heure" hint="Format HH:MM">
+                <TextField value={occurredTime} onChangeText={setOccurredTime} keyboardType="numbers-and-punctuation" autoCapitalize="none" autoCorrect={false} />
+              </FormField>
             </View>
           </View>
         ) : (
           <>
             <View className="flex-row gap-3">
               <View className="flex-1">
-                <Text className="text-[12px] font-semibold text-slate-600 dark:text-slate-300">Date</Text>
-                <Pressable onPress={() => openPicker('occurredDate')} className="mt-2 flex-row items-center justify-between rounded-2xl bg-slate-50 dark:bg-slate-800 px-4 py-4">
-                  <View>
-                    <Text className="text-[15px] font-semibold text-slate-900 dark:text-white">{shortDateLabel(occurredDate)}</Text>
-                    <Text className="mt-0.5 text-[12px] text-slate-500 dark:text-slate-300">{occurredDate}</Text>
-                  </View>
-                  <Icon name="calendar" size={20} color={isDark ? '#FFFFFF' : '#111827'} />
-                </Pressable>
+                <FormField label="Date">
+                  <PickerField value={shortDateLabel(occurredDate)} description={occurredDate} icon="calendar" onPress={() => openPicker('occurredDate')} />
+                </FormField>
               </View>
               <View className="flex-1">
-                <Text className="text-[12px] font-semibold text-slate-600 dark:text-slate-300">Heure</Text>
-                <Pressable onPress={() => openPicker('occurredTime')} className="mt-2 flex-row items-center justify-between rounded-2xl bg-slate-50 dark:bg-slate-800 px-4 py-4">
-                  <Text className="text-[15px] font-semibold text-slate-900 dark:text-white">{occurredTime}</Text>
-                  <Icon name="check" size={18} color={isDark ? 'rgba(255,255,255,0.75)' : '#6B7280'} />
-                </Pressable>
+                <FormField label="Heure">
+                  <PickerField value={occurredTime} icon="chevron-right" onPress={() => openPicker('occurredTime')} />
+                </FormField>
               </View>
             </View>
-            <View className="mt-4">
-              <Text className="text-[12px] font-semibold text-slate-600 dark:text-slate-300">Échéance (optionnel)</Text>
-              <Pressable onPress={() => openPicker('dueDate')} className="mt-2 flex-row items-center justify-between rounded-2xl bg-slate-50 dark:bg-slate-800 px-4 py-4">
-                <View>
-                  <Text className="text-[15px] font-semibold text-slate-900 dark:text-white">{dueDate ? shortDateLabel(dueDate) : 'Aucune'}</Text>
-                  <Text className="mt-0.5 text-[12px] text-slate-500 dark:text-slate-300">{dueDate ?? 'Suivi exploitation'}</Text>
-                </View>
-                <Icon name="chevron-right" size={20} color={isDark ? '#FFFFFF' : '#111827'} />
-              </Pressable>
+            <FormField label="Échéance" hint="Optionnel, pour le suivi de correction." className="mt-4">
+              <PickerField
+                value={dueDate ? shortDateLabel(dueDate) : 'Aucune'}
+                description={dueDate ?? 'Suivi exploitation'}
+                icon="chevron-right"
+                onPress={() => openPicker('dueDate')}
+              />
               <Pressable onPress={() => setDueDate(null)} className="mt-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-3 py-3 active:opacity-90">
                 <Text className="text-center text-[12px] font-semibold text-slate-700 dark:text-slate-200">Retirer l’échéance</Text>
               </Pressable>
-            </View>
+            </FormField>
           </>
         )}
       </Card>
@@ -219,17 +211,16 @@ export default function EditIncidentScreen() {
       <View className="flex-row gap-2">
         {severities.map(s => {
           const selected = s.value === severity;
-          const icon = s.value === 'critique' ? 'triangle-alert' : s.value === 'majeure' ? 'circle-alert' : 'badge-check';
           return (
-            <Card key={s.value} onPress={() => setSeverity(s.value)} className={selected ? 'flex-1 px-4 py-3 bg-brand-600 border-brand-600' : 'flex-1 px-4 py-3'}>
-              <View className="flex-row items-center justify-between">
-                <View className="flex-row items-center">
-                  <Icon name={icon} size={16} color={selected ? '#FFFFFF' : isDark ? '#FFFFFF' : '#0F172A'} />
-                  <Text className={selected ? 'ml-2 text-[13px] font-semibold text-white' : 'ml-2 text-[13px] font-semibold text-slate-900 dark:text-white'}>{s.label}</Text>
-                </View>
-                <Chip label={s.value} tone={s.tone} />
-              </View>
-            </Card>
+            <ChoiceCard
+              key={s.value}
+              title={s.label}
+              description={s.value}
+              selected={selected}
+              onPress={() => setSeverity(s.value)}
+              className="flex-1"
+              badge={<ChoiceBadge label={s.value} tone={s.tone} />}
+            />
           );
         })}
       </View>
@@ -239,26 +230,31 @@ export default function EditIncidentScreen() {
         {statuses.map(s => {
           const selected = s.value === status;
           return (
-            <Card key={s.value} onPress={() => setStatus(s.value)} className={selected ? 'flex-1 px-4 py-3 bg-brand-600 border-brand-600' : 'flex-1 px-4 py-3'}>
-              <View className="flex-row items-center justify-between">
-                <Text className={selected ? 'text-[13px] font-semibold text-white' : 'text-[13px] font-semibold text-slate-900 dark:text-white'}>{s.label}</Text>
-                <Chip label={s.value === 'ouvert' ? '!' : s.value === 'en_cours' ? '↻' : '✓'} tone={s.tone} />
-              </View>
-            </Card>
+            <ChoiceCard
+              key={s.value}
+              title={s.label}
+              selected={selected}
+              onPress={() => setStatus(s.value)}
+              className="flex-1"
+              badge={<ChoiceBadge label={s.value === 'ouvert' ? '!' : s.value === 'en_cours' ? '↻' : '✓'} tone={s.tone} />}
+            />
           );
         })}
       </View>
 
       <SectionHeader title="Détails" />
       <Card>
-        <Text className="text-[12px] font-semibold text-slate-600 dark:text-slate-300">Titre</Text>
-        <TextInput value={title} onChangeText={setTitle} className="mt-2 text-[15px] text-slate-900 dark:text-white" />
+        <FormField label="Titre">
+          <TextField value={title} onChangeText={setTitle} autoCapitalize="sentences" />
+        </FormField>
 
-        <Text className="mt-4 text-[12px] font-semibold text-slate-600 dark:text-slate-300">Description</Text>
-        <TextInput value={description} onChangeText={setDescription} multiline className="mt-2 min-h-[96px] text-[14px] text-slate-900 dark:text-white" />
+        <FormField label="Description" className="mt-4">
+          <TextField value={description} onChangeText={setDescription} multiline inputClassName="text-[14px]" />
+        </FormField>
 
-        <Text className="mt-4 text-[12px] font-semibold text-slate-600 dark:text-slate-300">Assigné à</Text>
-        <TextInput value={assignedTo} onChangeText={setAssignedTo} className="mt-2 text-[15px] text-slate-900 dark:text-white" />
+        <FormField label="Assigné à" className="mt-4">
+          <TextField value={assignedTo} onChangeText={setAssignedTo} autoCapitalize="words" autoCorrect={false} />
+        </FormField>
       </Card>
 
       <View className="mt-6 gap-3">

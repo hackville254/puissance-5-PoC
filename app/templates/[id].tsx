@@ -1,11 +1,12 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Alert, Pressable, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, Text, View } from 'react-native';
 
 import { AppBar } from '../../components/ui/AppBar';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Chip } from '../../components/ui/Chip';
+import { ChoiceCard, FormField, TextField } from '../../components/ui/FormControls';
 import { Screen } from '../../components/ui/Screen';
 import { SectionHeader } from '../../components/ui/SectionHeader';
 import { canPerform } from '../../lib/models';
@@ -104,18 +105,21 @@ export default function TemplateDetailScreen() {
 
       <SectionHeader title="Nom" />
       <Card>
-        <TextInput value={name} onChangeText={setName} className="text-[15px] text-slate-900 dark:text-white" />
+        <FormField label="Nom du modèle">
+          <TextField value={name} onChangeText={setName} autoCapitalize="sentences" />
+        </FormField>
       </Card>
 
       <SectionHeader title="Ajouter un critère" />
       <Card>
-        <Text className="text-[12px] font-semibold text-slate-600 dark:text-slate-300">Libellé</Text>
-        <TextInput value={itemLabel} onChangeText={setItemLabel} className="mt-2 text-[15px] text-slate-900 dark:text-white" />
-        <View className="mt-4 flex-row items-center justify-between">
-          <Pressable onPress={() => setCritical(v => !v)} className="flex-row items-center">
-            <Chip label={critical ? 'Critique' : 'Optionnel'} tone={critical ? 'danger' : 'neutral'} />
-            <Text className="ml-3 text-[13px] text-slate-600 dark:text-slate-300">Appuyer pour basculer</Text>
-          </Pressable>
+        <FormField label="Libellé" hint="Nom du critère de controle.">
+          <TextField value={itemLabel} onChangeText={setItemLabel} autoCapitalize="sentences" />
+        </FormField>
+        <View className="mt-4 flex-row gap-2">
+          <ChoiceCard title="Critique" description="Bloquant pour la conformite" selected={critical} onPress={() => setCritical(true)} className="flex-1" />
+          <ChoiceCard title="Optionnel" description="Point de controle secondaire" selected={!critical} onPress={() => setCritical(false)} className="flex-1" />
+        </View>
+        <View className="mt-4 flex-row items-center justify-end">
           <Button label="Ajouter" disabled={!canManage} onPress={addItem} variant="secondary" className="h-10 px-3 rounded-xl" />
         </View>
       </Card>

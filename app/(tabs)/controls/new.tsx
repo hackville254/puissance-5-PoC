@@ -1,13 +1,13 @@
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Alert, Modal, Platform, Pressable, Text, TextInput, View } from 'react-native';
+import { Alert, Modal, Platform, Pressable, Text, View } from 'react-native';
 import { useColorScheme } from 'nativewind';
 
 import { AppBar } from '../../../components/ui/AppBar';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
 import { Chip } from '../../../components/ui/Chip';
-import { Icon } from '../../../components/ui/Icon';
+import { ChoiceBadge, ChoiceCard, FormField, PickerField, SearchField, TextField } from '../../../components/ui/FormControls';
 import { Screen } from '../../../components/ui/Screen';
 import { SectionHeader } from '../../../components/ui/SectionHeader';
 import { pad2, shortDateLabel, todayISODate } from '../../../lib/format';
@@ -163,40 +163,27 @@ export default function NewControlScreen() {
 
       <SectionHeader title="Site" />
       <Card>
-        <View className="flex-row items-center rounded-2xl bg-slate-50 dark:bg-slate-800 px-4 py-3">
-          <Icon name="building" size={18} color={isDark ? 'rgba(255,255,255,0.8)' : '#64748B'} />
-          <TextInput
+        <FormField label="Site concerné" hint="Recherche un site puis sélectionne-le dans la liste.">
+          <SearchField
             value={siteQuery}
             onChangeText={setSiteQuery}
             accessibilityLabel="Recherche de site"
-            placeholder="Rechercher un site…"
-            placeholderTextColor={isDark ? 'rgba(255,255,255,0.45)' : '#94A3B8'}
-            className="ml-3 flex-1 text-[14px] text-slate-900 dark:text-white"
+            placeholder="Rechercher un site"
+            onClear={() => setSiteQuery('')}
           />
-          {siteQuery.trim().length > 0 ? (
-            <Pressable accessibilityRole="button" accessibilityLabel="Effacer la recherche" onPress={() => setSiteQuery('')} className="h-9 w-9 items-center justify-center rounded-full bg-white/70 dark:bg-white/10">
-              <Icon name="x" size={16} color={isDark ? '#FFFFFF' : '#0F172A'} />
-            </Pressable>
-          ) : null}
-        </View>
-        <View className="mt-3 flex-row flex-wrap gap-2">
+        </FormField>
+        <View className="mt-3 gap-2">
           {filteredSites.map(s => {
             const selected = s.id === siteId;
             return (
-              <Pressable
+              <ChoiceCard
                 key={s.id}
+                title={s.name}
+                description={`${s.city} • ${s.address}`}
+                selected={selected}
                 onPress={() => setSiteId(s.id)}
-                accessibilityRole="button"
-                accessibilityLabel={`Sélectionner le site ${s.name}`}
-                className={selected ? 'rounded-2xl bg-brand-600 px-3 py-2' : 'rounded-2xl bg-slate-100 dark:bg-slate-800 px-3 py-2'}
-              >
-                <Text className={selected ? 'text-[13px] font-semibold text-white' : 'text-[13px] font-semibold text-slate-800 dark:text-slate-100'}>
-                  {s.name}
-                </Text>
-                <Text className={selected ? 'mt-0.5 text-[11px] text-white/80' : 'mt-0.5 text-[11px] text-slate-500 dark:text-slate-300'}>
-                  {s.city}
-                </Text>
-              </Pressable>
+                badge={selected ? <ChoiceBadge label="Sélectionné" tone="brand" /> : undefined}
+              />
             );
           })}
         </View>
@@ -208,59 +195,45 @@ export default function NewControlScreen() {
           <>
             <View className="flex-row gap-3">
               <View className="flex-1">
-                <Text className="text-[12px] font-semibold text-slate-600 dark:text-slate-300">Date (YYYY-MM-DD)</Text>
-                <TextInput value={date} onChangeText={setDate} className="mt-2 text-[15px] text-slate-900 dark:text-white" />
+                <FormField label="Date" hint="Format AAAA-MM-JJ">
+                  <TextField value={date} onChangeText={setDate} keyboardType="numbers-and-punctuation" autoCapitalize="none" autoCorrect={false} />
+                </FormField>
               </View>
             </View>
             <View className="mt-4 flex-row gap-3">
               <View className="flex-1">
-                <Text className="text-[12px] font-semibold text-slate-600 dark:text-slate-300">Début (HH:MM)</Text>
-                <TextInput value={startTime} onChangeText={setStartTime} className="mt-2 text-[15px] text-slate-900 dark:text-white" />
+                <FormField label="Début" hint="Format HH:MM">
+                  <TextField value={startTime} onChangeText={setStartTime} keyboardType="numbers-and-punctuation" autoCapitalize="none" autoCorrect={false} />
+                </FormField>
               </View>
               <View className="flex-1">
-                <Text className="text-[12px] font-semibold text-slate-600 dark:text-slate-300">Fin (HH:MM)</Text>
-                <TextInput value={endTime} onChangeText={setEndTime} className="mt-2 text-[15px] text-slate-900 dark:text-white" />
+                <FormField label="Fin" hint="Format HH:MM">
+                  <TextField value={endTime} onChangeText={setEndTime} keyboardType="numbers-and-punctuation" autoCapitalize="none" autoCorrect={false} />
+                </FormField>
               </View>
             </View>
           </>
         ) : (
           <>
-            <Text className="text-[12px] font-semibold text-slate-600 dark:text-slate-300">Date</Text>
-            <Pressable
-              onPress={() => openPicker('date')}
-              className="mt-2 flex-row items-center justify-between rounded-2xl bg-slate-50 dark:bg-slate-800 px-4 py-4"
-            >
-              <View>
-                <Text className="text-[15px] font-semibold text-slate-900 dark:text-white">{shortDateLabel(date)}</Text>
-                <Text className="mt-0.5 text-[12px] text-slate-500 dark:text-slate-300">{date}</Text>
-              </View>
-              <Icon name="calendar" size={20} color={isDark ? '#FFFFFF' : '#111827'} />
-            </Pressable>
+            <FormField label="Date">
+              <PickerField value={shortDateLabel(date)} description={date} icon="calendar" onPress={() => openPicker('date')} />
+            </FormField>
 
             <View className="mt-4 flex-row gap-3">
               <View className="flex-1">
-                <Text className="text-[12px] font-semibold text-slate-600 dark:text-slate-300">Début</Text>
-                <Pressable
-                  onPress={() => openPicker('start')}
-                  className="mt-2 flex-row items-center justify-between rounded-2xl bg-slate-50 dark:bg-slate-800 px-4 py-4"
-                >
-                  <Text className="text-[15px] font-semibold text-slate-900 dark:text-white">{startTime}</Text>
-                  <Icon name="check" size={18} color={isDark ? 'rgba(255,255,255,0.75)' : '#6B7280'} />
-                </Pressable>
+                <FormField label="Début">
+                  <PickerField value={startTime} icon="chevron-right" onPress={() => openPicker('start')} />
+                </FormField>
               </View>
               <View className="flex-1">
-                <Text className="text-[12px] font-semibold text-slate-600 dark:text-slate-300">Fin</Text>
-                <Pressable
-                  onPress={() => openPicker('end')}
-                  className="mt-2 flex-row items-center justify-between rounded-2xl bg-slate-50 dark:bg-slate-800 px-4 py-4"
-                >
-                  <Text className="text-[15px] font-semibold text-slate-900 dark:text-white">{endTime}</Text>
-                  <Icon name="check" size={18} color={isDark ? 'rgba(255,255,255,0.75)' : '#6B7280'} />
-                </Pressable>
+                <FormField label="Fin">
+                  <PickerField value={endTime} icon="chevron-right" onPress={() => openPicker('end')} />
+                </FormField>
               </View>
             </View>
 
-            <View className="mt-4 flex-row gap-2">
+            <FormField label="Durée rapide" className="mt-4">
+            <View className="mt-2 flex-row gap-2">
               {[30, 45, 60].map(m => (
                 <Pressable
                   key={m}
@@ -271,6 +244,7 @@ export default function NewControlScreen() {
                 </Pressable>
               ))}
             </View>
+            </FormField>
 
             <Modal visible={Boolean(picker)} transparent animationType="fade" onRequestClose={closePicker}>
               <Pressable onPress={closePicker} style={{ flex: 1, backgroundColor: overlay, justifyContent: 'flex-end' }}>
@@ -342,20 +316,30 @@ export default function NewControlScreen() {
         {types.map(t => {
           const selected = t.value === type;
           return (
-            <Card key={t.value} onPress={() => setType(t.value)} className={selected ? 'flex-1 px-4 py-3 bg-brand-600 border-brand-600' : 'flex-1 px-4 py-3'}>
-              <View className="flex-row items-center justify-between">
-                <Text className={selected ? 'text-[13px] font-semibold text-white' : 'text-[13px] font-semibold text-slate-900 dark:text-white'}>{t.label}</Text>
-                <Chip label={t.value === 'quality' ? 'QA' : 'A/A'} tone="neutral" />
-              </View>
-            </Card>
+            <ChoiceCard
+              key={t.value}
+              title={t.label}
+              description={t.value === 'quality' ? 'Checklist, note et commentaires' : 'Constat visuel avant / après'}
+              selected={selected}
+              onPress={() => setType(t.value)}
+              className="flex-1"
+              badge={<ChoiceBadge label={t.value === 'quality' ? 'QA' : 'A/A'} tone="neutral" />}
+            />
           );
         })}
       </View>
 
       <SectionHeader title="Assignation" />
       <Card>
-        <Text className="text-[12px] font-semibold text-slate-600 dark:text-slate-300">Assigné à</Text>
-        <TextInput accessibilityLabel="Nom de la personne assignée" value={assigneeName} onChangeText={setAssigneeName} className="mt-2 text-[15px] text-slate-900 dark:text-white" />
+        <FormField label="Assigné à" hint="Nom de la personne responsable du contrôle.">
+          <TextField
+            accessibilityLabel="Nom de la personne assignée"
+            value={assigneeName}
+            onChangeText={setAssigneeName}
+            autoCapitalize="words"
+            autoCorrect={false}
+          />
+        </FormField>
       </Card>
 
       <SectionHeader title="Aperçu" />
