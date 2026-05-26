@@ -183,8 +183,8 @@ export function WhatsAppTabBar(props: TabBarProps) {
         style={{
           backgroundColor: 'transparent',
           paddingBottom: bottomPad,
-          paddingTop: 10,
-          paddingHorizontal: 14
+          paddingTop: 8,
+          paddingHorizontal: 12
         }}
       >
         <View
@@ -193,9 +193,8 @@ export function WhatsAppTabBar(props: TabBarProps) {
             borderColor: border,
             borderWidth: 1,
             borderRadius: 24,
-            paddingTop: 8,
-            paddingBottom: 8,
-            paddingHorizontal: 10,
+            paddingVertical: 8,
+            paddingHorizontal: 8,
             shadowColor: active,
             shadowOpacity: isDark ? 0.2 : 0.1,
             shadowRadius: 12,
@@ -203,88 +202,100 @@ export function WhatsAppTabBar(props: TabBarProps) {
             elevation: 6
           }}
         >
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          {leftTabs.map(tab => {
-            const routeIndex = props.state.routes.findIndex(r => matchesTab(r.name, tab.name));
-            const focused = routeIndex === props.state.index;
-            return (
-              <TabItem
-                key={tab.name}
-                label={tab.label}
-                icon={tab.icon}
-                focused={focused}
-                active={active}
-                inactive={inactive}
-                labelActive={labelActive}
-                labelInactive={labelInactive}
-                onPress={() => navigateToTab(tab.name)}
-                compact={compact}
-              />
-            );
-          })}
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            {leftTabs.map(tab => {
+              const routeIndex = props.state.routes.findIndex(r => matchesTab(r.name, tab.name));
+              const focused = routeIndex === props.state.index;
+              return (
+                <TabItem
+                  key={tab.name}
+                  label={tab.label}
+                  icon={tab.icon}
+                  focused={focused}
+                  active={active}
+                  inactive={inactive}
+                  labelActive={labelActive}
+                  labelInactive={labelInactive}
+                  onPress={() => navigateToTab(tab.name)}
+                  compact={compact}
+                />
+              );
+            })}
 
-          <Pressable
-            onPress={openSheet}
-            accessibilityRole="button"
-            accessibilityLabel="Plus d’actions"
-            style={{
-              width: compact ? 72 : 78,
-              alignItems: 'center',
-              justifyContent: 'center',
-              paddingTop: 2
-            }}
-          >
-            <View
-              style={{
-                width: compact ? 56 : 60,
-                height: compact ? 56 : 60,
-                borderRadius: compact ? 28 : 30,
-                backgroundColor: active,
+            <Pressable
+              onPress={openSheet}
+              accessibilityRole="button"
+              accessibilityLabel="Plus d’actions"
+              style={({ pressed }) => ({
+                flex: 1,
+                minWidth: 0,
                 alignItems: 'center',
                 justifyContent: 'center',
-                shadowColor: active,
-                shadowOpacity: 0.28,
-                shadowRadius: 10,
-                shadowOffset: { width: 0, height: 8 },
-                elevation: 8,
-                transform: [{ translateY: -8 }]
-              }}
+                paddingVertical: compact ? 6 : 8,
+                opacity: pressed ? 0.85 : 1
+              })}
             >
-              <Icon name="plus" size={compact ? 28 : 30} color="#FFFFFF" strokeWidth={2.6} />
-            </View>
-              <Text
-              style={{
-                  marginTop: 2,
-                  fontSize: compact ? 10 : 11,
-                  lineHeight: compact ? 12 : 13,
-                  fontWeight: '700',
-                  color: labelInactive
-              }}
-            >
-              Plus
-            </Text>
-          </Pressable>
+              <View
+                style={{
+                  minWidth: compact ? 56 : 62,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: 18,
+                  paddingVertical: compact ? 4 : 6,
+                  paddingHorizontal: 4
+                }}
+              >
+                <View
+                  style={{
+                    width: compact ? 38 : 42,
+                    height: compact ? 38 : 42,
+                    borderRadius: compact ? 19 : 21,
+                    backgroundColor: active,
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <Icon name="plus" size={compact ? 20 : 22} color="#FFFFFF" strokeWidth={2.6} />
+                </View>
+                <Text
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.82}
+                  style={{
+                    marginTop: 4,
+                    fontSize: compact ? 10 : 11,
+                    lineHeight: compact ? 12 : 13,
+                    fontWeight: '700',
+                    color: labelInactive,
+                    textAlign: 'center',
+                    maxWidth: compact ? 58 : 64
+                  }}
+                >
+                  Plus
+                </Text>
+              </View>
+            </Pressable>
 
-          {rightTabs.map(tab => {
-            const routeIndex = props.state.routes.findIndex(r => matchesTab(r.name, tab.name));
-            const focused = routeIndex === props.state.index;
-            return (
-              <TabItem
-                key={tab.name}
-                label={tab.label}
-                icon={tab.icon}
-                focused={focused}
-                active={active}
-                inactive={inactive}
-                labelActive={labelActive}
-                labelInactive={labelInactive}
-                onPress={() => navigateToTab(tab.name)}
-                compact={compact}
-              />
-            );
-          })}
+            {rightTabs.map(tab => {
+              const routeIndex = props.state.routes.findIndex(r => matchesTab(r.name, tab.name));
+              const focused = routeIndex === props.state.index;
+              return (
+                <TabItem
+                  key={tab.name}
+                  label={tab.label}
+                  icon={tab.icon}
+                  focused={focused}
+                  active={active}
+                  inactive={inactive}
+                  labelActive={labelActive}
+                  labelInactive={labelInactive}
+                  onPress={() => navigateToTab(tab.name)}
+                  compact={compact}
+                />
+              );
+            })}
+          </View>
         </View>
-      </View>
       </View>
 
       <Modal visible={open} transparent animationType="none" onRequestClose={closeSheet}>
@@ -297,21 +308,35 @@ export function WhatsAppTabBar(props: TabBarProps) {
             style={{
               transform: [{ translateY }],
               backgroundColor: isDark ? '#0F172A' : '#FFFFFF',
-              borderTopLeftRadius: 24,
-              borderTopRightRadius: 24,
-              paddingBottom: bottomPad,
+              borderTopLeftRadius: 20,
+              borderTopRightRadius: 20,
+              paddingBottom: bottomPad + 4,
               borderTopWidth: 1,
               borderTopColor: border
             }}
           >
-            <View style={{ paddingHorizontal: 16, paddingTop: 10, paddingBottom: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Text style={{ fontSize: 14, fontWeight: '800', color: isDark ? '#FFFFFF' : '#111827' }}>Menu</Text>
-              <Pressable onPress={closeSheet} style={{ height: 36, width: 36, alignItems: 'center', justifyContent: 'center', borderRadius: 12, backgroundColor: isDark ? '#111827' : '#EFF6FF' }}>
+            <View style={{ alignItems: 'center', paddingTop: 10 }}>
+              <View
+                style={{
+                  width: 40,
+                  height: 4,
+                  borderRadius: 999,
+                  backgroundColor: isDark ? '#334155' : '#CBD5E1'
+                }}
+              />
+            </View>
+
+            <View style={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Text style={{ fontSize: 16, fontWeight: '800', color: isDark ? '#FFFFFF' : '#111827' }}>Raccourcis</Text>
+              <Pressable
+                onPress={closeSheet}
+                style={{ height: 36, width: 36, alignItems: 'center', justifyContent: 'center', borderRadius: 12, backgroundColor: isDark ? '#111827' : '#F1F5F9' }}
+              >
                 <Icon name="x" size={18} color={isDark ? '#FFFFFF' : '#111827'} strokeWidth={2.4} />
               </Pressable>
             </View>
 
-            <View style={{ paddingHorizontal: 10, paddingBottom: 6 }}>
+            <View style={{ paddingHorizontal: 12, paddingBottom: 6 }}>
               {actions.map(a => (
                 <Pressable
                   key={a.label}
@@ -319,20 +344,22 @@ export function WhatsAppTabBar(props: TabBarProps) {
                     closeSheet();
                     a.onPress();
                   }}
-                  style={{
+                  style={({ pressed }) => ({
                     flexDirection: 'row',
                     alignItems: 'center',
-                    paddingVertical: 14,
+                    paddingVertical: 13,
                     paddingHorizontal: 12,
-                    borderRadius: 16
-                  }}
+                    borderRadius: 16,
+                    opacity: pressed ? 0.88 : 1,
+                    backgroundColor: pressed ? (isDark ? 'rgba(255,255,255,0.04)' : '#F8FAFC') : 'transparent'
+                  })}
                 >
                   <View
                     style={{
                       width: 36,
                       height: 36,
                       borderRadius: 12,
-                      backgroundColor: isDark ? '#111827' : '#EFF6FF',
+                      backgroundColor: isDark ? '#111827' : '#F1F5F9',
                       alignItems: 'center',
                       justifyContent: 'center',
                       marginRight: 12

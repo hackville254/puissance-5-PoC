@@ -1,3 +1,23 @@
+### [2026-05-26T06:14:50Z] | Uniformisation des modales et de l'ecran de connexion
+- **Contexte :** Apres la simplification du header et de la navigation basse, la modal d'actions, la modal d'aide et l'ecran de connexion conservaient encore une presentation trop particuliere par rapport au reste de l'application.
+- **Modifications effectuees :**
+    - Harmonisation de `app/sign-in.tsx` avec le fond standard de `Screen` et une carte de connexion centrale plus sobre.
+    - Simplification de la modal du bouton `Plus` dans `components/navigation/WhatsAppTabBar.tsx` avec une poignee, un titre plus direct et des lignes d'action plus legeres.
+    - Allégement de la modal d'aide dans `components/ui/AppBar.tsx` en supprimant les blocs secondaires non essentiels et en resserrant la presentation.
+- **Decisions Techniques :** J'ai choisi de rapprocher la connexion et les modales des composants de base deja utilises dans l'application pour reduire les ecarts visuels et limiter le cout de maintenance UI.
+- **Impacts & Dependances :** Fichiers touches: `app/sign-in.tsx`, `components/navigation/WhatsAppTabBar.tsx`, `components/ui/AppBar.tsx`. Les parcours restent identiques, seule la presentation evolue.
+- **Prochaines étapes :** Faire une passe visuelle sur mobile et web pour ajuster au besoin les espacements verticaux selon la hauteur d'ecran et verifier le confort d'usage clavier.
+
+### [2026-05-26T06:12:49Z] | Simplification AppBar, recentrage tab bar et correction des etats selectionnes
+- **Contexte :** L'entete etait trop charge visuellement, la barre de navigation basse manquait d'equilibre, et plusieurs cartes selectionnees perdaient leur lisibilite en theme clair car le style par defaut pouvait reprendre la main sur le fond selectionne.
+- **Modifications effectuees :**
+    - Simplification de `components/ui/AppBar.tsx` pour ne garder qu'une structure claire: action gauche, titre, sous-titre et actions a droite.
+    - Recentrage de `components/navigation/WhatsAppTabBar.tsx` en supprimant le bouton central decale et en harmonisant l'alignement de tous les items.
+    - Correction de `components/ui/Card.tsx` pour desactiver les fonds et bordures par defaut lorsqu'un composant appelant fournit deja ses propres classes `bg-*` ou `border-*`.
+- **Decisions Techniques :** J'ai corrige le probleme de lisibilite a la source dans `Card` plutot que de multiplier des correctifs ecran par ecran. Cette approche stabilise tous les etats selectionnes existants et futurs sans alourdir les ecrans.
+- **Impacts & Dependances :** Fichiers touches: `components/ui/AppBar.tsx`, `components/navigation/WhatsAppTabBar.tsx`, `components/ui/Card.tsx`. Les interactions restent identiques, mais la presentation est plus simple et les cartes actives deviennent lisibles en clair comme en sombre.
+- **Prochaines étapes :** Verifier visuellement sur mobile les espacements de la tab bar et faire une passe UX sur les autres composants selectionnables si de nouveaux cas de contraste apparaissent.
+
 ### [2026-05-26T05:48:28Z] | Nettoyage des textes techniques et standardisation pnpm
 - **Contexte :** Plusieurs ecrans exposaient encore des formulations internes ou trop techniques (`PoC`, `mode demo`, `cache local`, `RBAC`, messages de stockage), ce qui degradiait la perception produit. La documentation etait aussi trop pauvre pour un usage clair via `pnpm`.
 - **Modifications effectuees :**

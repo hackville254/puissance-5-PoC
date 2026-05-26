@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Modal, Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 
 import { cn } from '../../lib/cn';
-import { ROLE_LABELS, routeKeyForPathname, type RouteKey } from '../../lib/models';
+import { ROLE_LABELS, routeKeyForPathname } from '../../lib/models';
 import { getItem, setItem } from '../../lib/storage';
 import { useAppStore } from '../../lib/store';
 import type { IconName } from './Icon';
@@ -24,22 +24,6 @@ type HelpContent = {
 
 const HELP_PREFERENCE_PREFIX = 'p5_help_pref_v1';
 
-const PAGE_TAGS: Record<RouteKey, string> = {
-  home: 'Tableau de bord',
-  profile: 'Compte',
-  'controls:list': 'Controles',
-  'controls:detail': 'Execution',
-  'controls:plan': 'Planification',
-  'incidents:list': 'Incidents',
-  'incidents:detail': 'Suivi',
-  'incidents:edit': 'Declaration',
-  planning: 'Agenda',
-  sites: 'Sites',
-  templates: 'Modeles',
-  reports: 'Rapports',
-  unknown: 'Page'
-};
-
 function normalizeUserScope(userName: string) {
   const clean = userName.trim().toLowerCase().replace(/[^a-z0-9_-]+/g, '-').slice(0, 48);
   return clean || 'anonymous';
@@ -49,10 +33,6 @@ function preferenceKeyForRoute(pathname: string, userName: string) {
   const routeKey = routeKeyForPathname(pathname);
   if (routeKey === 'unknown') return null;
   return `${HELP_PREFERENCE_PREFIX}:${normalizeUserScope(userName)}:${routeKey}`;
-}
-
-function pageTagForPathname(pathname: string) {
-  return PAGE_TAGS[routeKeyForPathname(pathname)] ?? PAGE_TAGS.unknown;
 }
 
 function ActionButton({
@@ -311,18 +291,15 @@ export function AppBar({
   const { width, height, fontScale } = useWindowDimensions();
   const resolvedScheme = colorScheme === 'dark' ? 'dark' : 'light';
   const compact = width < 560;
-  const tablet = width >= 768;
   const wide = width >= 1080;
-  const showSidePanel = width >= 920;
-  const titleSize = compact ? 28 : tablet ? 34 : 30;
+  const titleSize = compact ? 22 : 26;
   const subtitleSize = compact ? 13 : 14;
   const buttonSize = compact ? 44 : 46;
-  const contentPaddingX = compact ? 18 : wide ? 28 : 22;
-  const contentPaddingY = compact ? 18 : 22;
-  const modalMaxWidth = Math.min(width - 24, wide ? 780 : 660);
+  const contentPaddingX = compact ? 18 : 20;
+  const contentPaddingY = compact ? 16 : 18;
+  const modalMaxWidth = Math.min(width - 24, wide ? 720 : 620);
   const modalMaxHeight = Math.max(320, height - (compact ? 20 : 40));
   const roleLabel = ROLE_LABELS[state.role];
-  const pageTag = pageTagForPathname(pathname);
   const headerBackground = resolvedScheme === 'dark' ? '#081225' : '#EAF2FF';
   const headerBorderColor = resolvedScheme === 'dark' ? '#14213B' : '#D6E2FF';
   const headerShadowOpacity = resolvedScheme === 'dark' ? 0.22 : 0.06;
@@ -334,8 +311,7 @@ export function AppBar({
   const primaryTextClassName = resolvedScheme === 'dark' ? 'text-white' : 'text-slate-950';
 
   const help = useMemo(() => helpContentForPathname(pathname, roleLabel), [pathname, roleLabel]);
-  const heroSummary = help?.summary ?? 'Informations utiles de la page.';
-  const quickBullets = help?.bullets.slice(0, showSidePanel ? 2 : 1) ?? [];
+  const helpSummary = help?.summary ?? '';
   const helpPreferenceKey = useMemo(
     () => (help ? preferenceKeyForRoute(pathname, state.session.userName) : null),
     [help, pathname, state.session.userName]
@@ -388,8 +364,6 @@ export function AppBar({
     } catch {}
   };
 
-  const navGroupWidth = Math.max(buttonSize, rightActions.length * buttonSize + Math.max(0, rightActions.length - 1) * 8 + (rightActions.length > 0 ? 16 : 0));
-
   return (
     <>
       <View
@@ -405,20 +379,33 @@ export function AppBar({
           elevation: 4
         }}
       >
-        <View className={cn(className)} style={{ paddingHorizontal: contentPaddingX, paddingTop: contentPaddingY, paddingBottom: contentPaddingY, gap: 18 }}>
+        <View className={cn(className)} style={{ paddingHorizontal: contentPaddingX, paddingTop: contentPaddingY, paddingBottom: contentPaddingY }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <View style={{ width: navGroupWidth, alignItems: 'flex-start', justifyContent: 'center' }}>
+            <View style={{ width: buttonSize, alignItems: 'flex-start', justifyContent: 'center' }}>
               {left ? <ActionButton action={left} showLabel={false} colorScheme={resolvedScheme} size={buttonSize} /> : <View style={{ width: buttonSize, height: buttonSize }} />}
             </View>
 
-            <View style={{ flex: 1, minWidth: 0, alignItems: compact ? 'flex-start' : 'center' }}>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: compact ? 'flex-start' : 'center' }}>
-                <MetaPill label={pageTag} colorScheme={resolvedScheme} />
-                <MetaPill label={roleLabel} colorScheme={resolvedScheme} tone="accent" />
-              </View>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text
+                className={cn('font-extrabold', titleColor)}
+                style={{ fontSize: titleSize, lineHeight: Math.round(titleSize * 1.15) }}
+                maxFontSizeMultiplier={1.2}
+                numberOfLines={compact ? 2 : 1}
+              >
+                {title}
+              </Text>
+              {subtitle ? (
+                <Text
+                  className={cn('mt-1', subtitleColor)}
+                  style={{ fontSize: subtitleSize * Math.min(fontScale, 1.1), lineHeight: Math.round(subtitleSize * 1.45) }}
+                  numberOfLines={compact ? 2 : 1}
+                >
+                  {subtitle}
+                </Text>
+              ) : null}
             </View>
 
-            <View style={{ width: navGroupWidth, minHeight: buttonSize, alignItems: 'flex-end', justifyContent: 'center' }}>
+            <View style={{ minHeight: buttonSize, alignItems: 'flex-end', justifyContent: 'center' }}>
               {rightActions.length > 0 ? (
                 <View
                   className={cn('rounded-[20px] border p-2', resolvedScheme === 'dark' ? 'bg-slate-950/70 border-slate-800' : 'bg-white/92 border-slate-200')}
@@ -440,80 +427,6 @@ export function AppBar({
               )}
             </View>
           </View>
-
-          <View style={{ flexDirection: showSidePanel ? 'row' : 'column', gap: 12 }}>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Text
-                className={cn('font-extrabold', titleColor)}
-                style={{ fontSize: titleSize, lineHeight: Math.round(titleSize * 1.08) }}
-                maxFontSizeMultiplier={1.25}
-                numberOfLines={compact ? 2 : 1}
-              >
-                {title}
-              </Text>
-
-              {subtitle ? (
-                <Text
-                  className={cn('mt-2', subtitleColor)}
-                  style={{ fontSize: subtitleSize * Math.min(fontScale, 1.15), lineHeight: Math.round(subtitleSize * 1.5) }}
-                  numberOfLines={compact ? 3 : 2}
-                >
-                  {subtitle}
-                </Text>
-              ) : null}
-
-              <View style={{ flexDirection: compact ? 'column' : 'row', gap: 10, marginTop: 14 }}>
-                <View
-                  className={cn('flex-1 rounded-2xl border px-4 py-3', resolvedScheme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200')}
-                  style={{ gap: 4 }}
-                >
-                  <Text className={cn('text-[11px] font-semibold uppercase tracking-[0.45px]', mutedTextClassName)}>Repère</Text>
-                  <Text className={cn('text-[14px] font-semibold leading-5', primaryTextClassName)}>
-                    {quickBullets[0] ?? "Accède à l'essentiel."}
-                  </Text>
-                </View>
-
-                <View
-                  className={cn('flex-1 rounded-2xl border px-4 py-3', resolvedScheme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200')}
-                  style={{ gap: 4 }}
-                >
-                  <Text className={cn('text-[11px] font-semibold uppercase tracking-[0.45px]', mutedTextClassName)}>Action</Text>
-                  <Text className={cn('text-[14px] font-semibold leading-5', primaryTextClassName)}>
-                    {help ? "Ouvre l'aide si besoin." : 'Actions visibles et directes.'}
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            {showSidePanel ? (
-              <View
-                className={cn('rounded-[24px] border px-5 py-4', resolvedScheme === 'dark' ? 'bg-slate-950 border-slate-800' : 'bg-white border-slate-200')}
-                style={{ width: wide ? 290 : 260, gap: 10 }}
-              >
-                <Text className={cn('text-[11px] font-semibold uppercase tracking-[0.5px]', mutedTextClassName)}>En bref</Text>
-                <Text className={cn('text-[14px] leading-6', primaryTextClassName)}>{heroSummary}</Text>
-                {quickBullets.slice(0, 2).map(item => (
-                  <View key={item} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
-                    <View className="mt-1 h-5 w-5 items-center justify-center rounded-full bg-brand-600">
-                      <Icon name="check" size={12} color="#FFFFFF" strokeWidth={2.6} />
-                    </View>
-                    <Text className={cn('flex-1 text-[13px] leading-5', mutedTextClassName)}>{item}</Text>
-                  </View>
-                ))}
-              </View>
-            ) : null}
-          </View>
-
-          {!showSidePanel ? (
-            <View className={cn('rounded-2xl border px-4 py-3', resolvedScheme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200')}>
-              <View style={{ flexDirection: 'row', alignItems: compact ? 'flex-start' : 'center', gap: 12 }}>
-                <View style={{ width: 10, height: 10, borderRadius: 999, backgroundColor: '#22C55E', marginTop: compact ? 5 : 0 }} />
-                <Text className={cn('flex-1 font-medium', resolvedScheme === 'dark' ? 'text-white/88' : 'text-slate-800')} style={{ fontSize: 13 * Math.min(fontScale, 1.1), lineHeight: 18 }}>
-                  {heroSummary}
-                </Text>
-              </View>
-            </View>
-          ) : null}
         </View>
       </View>
 
@@ -529,7 +442,7 @@ export function AppBar({
             <Pressable onPress={() => {}} style={{ width: '100%', maxWidth: modalMaxWidth }}>
               <View
                 accessibilityViewIsModal
-                className={cn('rounded-[30px] border p-5', surfaceClassName)}
+                className={cn('rounded-[24px] border p-5', surfaceClassName)}
                 style={{
                   maxHeight: modalMaxHeight,
                   shadowColor: '#020617',
@@ -537,24 +450,24 @@ export function AppBar({
                   shadowRadius: 24,
                   shadowOffset: { width: 0, height: 12 },
                   elevation: 10,
-                  gap: 18
+                  gap: 16
                 }}
               >
                 <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 14 }}>
-                  <View className={cn('h-14 w-14 items-center justify-center rounded-[20px]', resolvedScheme === 'dark' ? 'bg-brand-500/16' : 'bg-brand-50')}>
+                  <View className={cn('h-12 w-12 items-center justify-center rounded-2xl', resolvedScheme === 'dark' ? 'bg-brand-500/16' : 'bg-brand-50')}>
                     <Icon name="help-circle" size={24} color={resolvedScheme === 'dark' ? '#BFDBFE' : '#1D4ED8'} strokeWidth={2.4} />
                   </View>
 
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                      <MetaPill label="Presentation" colorScheme={resolvedScheme} tone="accent" />
+                      <MetaPill label="Aide" colorScheme={resolvedScheme} tone="accent" />
                       <MetaPill label={roleLabel} colorScheme={resolvedScheme} />
                     </View>
                     <Text className={cn('mt-3 text-[24px] font-extrabold', primaryTextClassName)} accessibilityRole="header" maxFontSizeMultiplier={1.2}>
                       {help?.title ?? 'Aide'}
                     </Text>
                     <Text className={cn('mt-2 text-[14px] leading-5', mutedTextClassName)} maxFontSizeMultiplier={1.2} numberOfLines={2}>
-                      {help?.summary ?? ''}
+                      {helpSummary}
                     </Text>
                   </View>
 
@@ -566,8 +479,8 @@ export function AppBar({
                   />
                 </View>
 
-                <View className={cn('rounded-[24px] border p-4', resolvedScheme === 'dark' ? 'bg-white/5 border-white/8' : 'bg-slate-50 border-slate-100')} style={{ flexShrink: 1 }}>
-                  <Text className={cn('text-[13px] font-semibold uppercase tracking-[0.45px]', mutedTextClassName)}>Essentiel</Text>
+                <View className={cn('rounded-2xl border p-4', resolvedScheme === 'dark' ? 'bg-white/5 border-white/8' : 'bg-slate-50 border-slate-100')} style={{ flexShrink: 1 }}>
+                  <Text className={cn('text-[13px] font-semibold uppercase tracking-[0.45px]', mutedTextClassName)}>Points clés</Text>
                   <ScrollView style={{ maxHeight: compact ? 180 : 220, marginTop: 12 }} contentContainerStyle={{ gap: 10, paddingBottom: 4 }}>
                     {(help?.bullets ?? []).map((item, index) => (
                       <HelpBullet key={`${index}-${item}`} index={index} text={item} colorScheme={resolvedScheme} />
@@ -575,7 +488,7 @@ export function AppBar({
                   </ScrollView>
                 </View>
 
-                <View className={cn('rounded-[24px] border p-4', resolvedScheme === 'dark' ? 'bg-slate-900 border-white/10' : 'bg-slate-50 border-slate-200')} style={{ gap: 12 }}>
+                <View className={cn('rounded-2xl border p-4', resolvedScheme === 'dark' ? 'bg-slate-900 border-white/10' : 'bg-slate-50 border-slate-200')} style={{ gap: 12 }}>
                   <View>
                     <Text className={cn('text-[15px] font-semibold', primaryTextClassName)}>Affichage automatique</Text>
                     <Text className={cn('mt-1 text-[13px] leading-5', mutedTextClassName)} numberOfLines={2}>
@@ -610,12 +523,6 @@ export function AppBar({
                     </View>
                   </Pressable>
 
-                  <View className={cn('rounded-2xl border px-4 py-3', resolvedScheme === 'dark' ? 'bg-white/5 border-white/8' : 'bg-white border-slate-200')}>
-                    <Text className={cn('text-[13px] font-semibold', primaryTextClassName)}>Acces adapte au role</Text>
-                    <Text className={cn('mt-1 text-[13px] leading-5', mutedTextClassName)} numberOfLines={2}>
-                      Certaines actions changent selon ton rôle ({roleLabel}).
-                    </Text>
-                  </View>
                 </View>
 
                 <View style={{ flexDirection: compact ? 'column' : 'row', gap: 10 }}>
