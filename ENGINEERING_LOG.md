@@ -1,3 +1,37 @@
+### [2026-05-26T05:48:28Z] | Nettoyage des textes techniques et standardisation pnpm
+- **Contexte :** Plusieurs ecrans exposaient encore des formulations internes ou trop techniques (`PoC`, `mode demo`, `cache local`, `RBAC`, messages de stockage), ce qui degradiait la perception produit. La documentation etait aussi trop pauvre pour un usage clair via `pnpm`.
+- **Modifications effectuees :**
+    - Simplification des textes visibles dans `app/sign-in.tsx`, `app/_layout.tsx`, `app/reports/index.tsx`, `app/(tabs)/controls/[id].tsx`, `app/(tabs)/profile.tsx`, `app/sites/index.tsx`, `app/sites/new.tsx`, `app/templates/[id].tsx`, `app/(tabs)/incidents/[id].tsx`, `app/(tabs)/incidents/edit/[id].tsx`, `app/(tabs)/controls/edit/[id].tsx`.
+    - Remplacement des messages techniques par des formulations produit plus neutres et orientees utilisateur.
+    - Mise a jour de `README.md` avec une base d'utilisation simple et uniquement `pnpm`.
+    - Nettoyage d'un commentaire interne dans `lib/state.ts` pour supprimer la reference directe au PoC.
+- **Decisions Techniques :** J'ai conserve les comportements applicatifs existants et j'ai limite l'intervention aux libelles et messages afin d'ameliorer l'experience sans rouvrir de chantiers fonctionnels. La documentation reste volontairement courte pour ne pas devenir une source de divergence.
+- **Impacts & Dependances :** Fichiers touches: `app/_layout.tsx`, `app/sign-in.tsx`, `app/reports/index.tsx`, `app/(tabs)/controls/[id].tsx`, `app/(tabs)/profile.tsx`, `app/sites/index.tsx`, `app/sites/new.tsx`, `app/templates/[id].tsx`, `app/(tabs)/incidents/[id].tsx`, `app/(tabs)/incidents/edit/[id].tsx`, `app/(tabs)/controls/edit/[id].tsx`, `README.md`, `lib/state.ts`. La logique metier et la navigation restent inchangees.
+- **Prochaines étapes :** Verifier visuellement les ecrans modifies sur mobile pour confirmer que le ton produit reste coherent partout, puis poursuivre le meme nettoyage sur les contenus d'aide si de nouveaux textes techniques reapparaissent.
+
+### [2026-05-26T00:50:25Z] | Durcissement auth cache et ecrans proteges
+- **Contexte :** Un audit transversal a revele deux failles concretes: des ecrans hors `sign-in` pouvaient rester atteignables si non enumeres dans `Stack.Protected`, et l'etat d'auth et le role etaient rehydrates depuis le cache local, donc modifiables par simple alteration du stockage.
+- **Modifications effectuees :**
+    - Enumeration explicite des ecrans racine prives dans `app/_layout.tsx` (`reports`, `sites`, `templates`) en plus du groupe `(tabs)`.
+    - Ajout d'une redirection defensive vers `sign-in` quand une session n'est pas active et qu'une route privee est tentee.
+    - Neutralisation de la persistance de `session` et `role` dans `lib/state.ts` afin de ne plus faire confiance au stockage local pour l'authentification et l'autorisation.
+- **Decisions Techniques :** J'ai prefere rendre l'auth ephemere dans le PoC plutot que de deplacer le token vers un stockage "plus sur" mais toujours non verifiable cote client. Sans backend ni signature serveur, tout etat d'auth rehydrate depuis le device reste falsifiable; il vaut mieux ne pas le restaurer.
+- **Impacts & Dependances :** Fichiers touches: `app/_layout.tsx`, `lib/state.ts`. Effet de bord volontaire: un redemarrage d'application renvoie vers `sign-in`, mais conserve les donnees metier locales et les preferences non sensibles.
+- **Prochaines étapes :** Si le PoC evolue vers un backend, introduire une vraie session signee/verifiee, un stockage natif dedie aux secrets et une separation plus nette entre cache metier local et contexte d'auth.
+
+### [2026-05-26T00:31:54Z] | Refonte Accueil et realignement tab bar
+- **Contexte :** La capture de l’accueil montrait des artefacts visuels en haut, une carte dashboard incoherente, un texte tronque et une tab bar encore trop proche d’un style WhatsApp vert hors charte.
+- **Modifications effectuees :**
+    - Remplacement de l’usage de `AppBar` sur `app/(tabs)/index.tsx` par un header dedie a l’accueil avec avatar initiales, statut role et fond uniforme.
+    - Deplacement de l’aide ambigue `Repere / Action` vers un composant `OnboardingTooltip` affiche seulement sur les 3 premieres visites via stockage local.
+    - Reconstruction de la carte dashboard avec palette unifiee, engrenage isole dans son propre bouton, deux chips statistiques homogènes et deux actions coherentes.
+    - Normalisation des cartes de contenu de l’accueil sur un rayon 16px et des textes secondaires plus sobres.
+    - Recentrage de `components/navigation/WhatsAppTabBar.tsx` sur la palette primaire bleue, avec item actif coherent et FAB `Plus` aligne au systeme visuel.
+    - Alignement de `components/ui/Card.tsx` sur un rayon 16px pour renforcer la coherence du design system.
+- **Decisions Techniques :** J’ai prefere sortir l’accueil de l’`AppBar` generique au lieu de le surcharger d’exceptions, afin d’obtenir une vraie hierarchie mobile premium sans casser les autres pages. L’onboarding est borne a 3 affichages pour conserver l’aide sans polluer l’interface long terme.
+- **Impacts & Dependances :** Fichiers touches: `app/(tabs)/index.tsx`, `components/navigation/WhatsAppTabBar.tsx`, `components/ui/Card.tsx`. `pnpm run test` passe et les diagnostics sont propres sur les fichiers modifies.
+- **Prochaines étapes :** Verifier en simulateur iPhone SE et iPhone 14 Pro que le nouveau header, la carte dashboard et la tab bar gardent le meme equilibre visuel en conditions reelles.
+
 ### [2026-05-26T00:17:59Z] | Resserage AppBar et modale visible
 - **Contexte :** L’en-tete restait encore trop verbeux et la symetrie des zones d’icones pouvait varier selon les pages. La modale d’aide devait aussi rester strictement dans l’espace visible.
 - **Modifications effectuees :**

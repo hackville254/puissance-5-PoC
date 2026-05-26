@@ -34,7 +34,7 @@ export default function ProfileScreen() {
     <Screen>
       <AppBar
         title="Profil"
-        subtitle="Mode démo • hors‑ligne • cache local"
+        subtitle="Préférences et accès"
         right={
           canPerform(state.role, 'manage_templates') || canPerform(state.role, 'manage_sites')
             ? [{ icon: 'settings', label: 'Administration', onPress: () => router.push(routes.sites) }]
@@ -47,7 +47,7 @@ export default function ProfileScreen() {
         <View className="flex-row items-center justify-between">
           <View>
             <Text className="text-[14px] font-semibold text-slate-900 dark:text-white">{state.session.userName || 'Utilisateur'}</Text>
-            <Text className="mt-1 text-[13px] text-slate-500 dark:text-slate-300">Session locale • pas de mot de passe</Text>
+            <Text className="mt-1 text-[13px] text-slate-500 dark:text-slate-300">Session active</Text>
           </View>
           <Button label="Déconnexion" variant="secondary" onPress={() => dispatch({ type: 'signOut' })} className="h-10 px-3 rounded-xl" />
         </View>
@@ -71,7 +71,7 @@ export default function ProfileScreen() {
         })}
       </View>
 
-      <SectionHeader title="Rôle" right={<Chip label={ready ? 'Cache prêt' : 'Chargement…'} tone={ready ? 'success' : 'warning'} />} />
+      <SectionHeader title="Rôle" right={<Chip label={ready ? 'Prêt' : 'Chargement…'} tone={ready ? 'success' : 'warning'} />} />
       {canPerform(state.role, 'switch_roles') ? (
         <View className="gap-3">
           {roles.map(r => {
@@ -105,7 +105,7 @@ export default function ProfileScreen() {
         <Card>
           <Text className="text-[14px] font-semibold text-slate-900 dark:text-white">Rôle actuel : {ROLE_LABELS[state.role]}</Text>
           <Text className="mt-1 text-[13px] text-slate-500 dark:text-slate-300">
-            Pour éviter les escalades de privilèges, le changement de rôle est réservé à l’Exploitation dans ce PoC.
+            Le changement de rôle est réservé à l’Exploitation.
           </Text>
         </Card>
       )}
@@ -126,28 +126,28 @@ export default function ProfileScreen() {
         </Card>
       </View>
 
-      <SectionHeader title="Cache local" />
+      <SectionHeader title="Données de l’application" />
       <Card>
-        <Text className="text-[14px] font-semibold text-slate-900 dark:text-white">Stockage</Text>
+        <Text className="text-[14px] font-semibold text-slate-900 dark:text-white">Gestion des données</Text>
         <Text className="mt-1 text-[13px] text-slate-500 dark:text-slate-300">
-          Web: localStorage • Mobile: AsyncStorage. Les preuves sensibles ne sont pas implémentées dans ce PoC.
+          Gère les informations enregistrées sur cet appareil et remets l’application à zéro si nécessaire.
         </Text>
         <View className="mt-4 gap-3">
           <Button
-            label="Réinitialiser le mode démo"
+            label="Réinitialiser les données"
             variant="secondary"
             onPress={() =>
-              Alert.alert('Réinitialiser', 'Revenir aux données de démonstration par défaut ?', [
+              Alert.alert('Réinitialiser', 'Revenir aux données initiales de l’application ?', [
                 { text: 'Annuler', style: 'cancel' },
                 { text: 'OK', style: 'default', onPress: reset }
               ])
             }
           />
           <Button
-            label="Vider le cache local"
+            label="Effacer les données de l’app"
             variant="danger"
             onPress={() =>
-              Alert.alert('Vider le cache', 'Supprimer les données locales (démonstration + actions) ?', [
+              Alert.alert('Effacer les données', 'Supprimer les données enregistrées sur cet appareil ?', [
                 { text: 'Annuler', style: 'cancel' },
                 { text: 'Supprimer', style: 'destructive', onPress: () => void clearCache() }
               ])

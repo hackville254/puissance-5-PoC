@@ -132,16 +132,16 @@ export default function ReportsScreen() {
       ListEmptyComponent={
         <Card>
           <Text className="text-[14px] font-semibold text-slate-900 dark:text-white">Aucun rapport généré</Text>
-          <Text className="mt-1 text-[13px] text-slate-500 dark:text-slate-300">Clôture un contrôle pour générer un rapport de démonstration.</Text>
+          <Text className="mt-1 text-[13px] text-slate-500 dark:text-slate-300">Clôture un contrôle pour retrouver son rapport ici.</Text>
         </Card>
       }
       ListFooterComponent={
         <>
-          <SectionHeader title="Partage client (à venir)" />
+          <SectionHeader title="Partage client" />
           <Card>
             <Text className="text-[14px] font-semibold text-slate-900 dark:text-white">Lien web sécurisé</Text>
             <Text className="mt-1 text-[13px] text-slate-500 dark:text-slate-300">
-              Lien signé + RBAC + journal d’audit. Le PoC reste hors‑ligne (données de démonstration + cache local).
+              Un espace partagé peut être ajouté ici pour permettre la consultation des rapports par les clients et responsables.
             </Text>
           </Card>
         </>
@@ -168,7 +168,7 @@ export default function ReportsScreen() {
                     label="Supprimer"
                     variant="danger"
                     onPress={() =>
-                      Alert.alert('Supprimer', 'Supprimer ce rapport (inspection) du cache local ?', [
+                      Alert.alert('Supprimer', 'Supprimer ce rapport ?', [
                         { text: 'Annuler', style: 'cancel' },
                         { text: 'Supprimer', style: 'destructive', onPress: () => dispatch({ type: 'deleteInspection', inspectionId: rep.id }) }
                       ])

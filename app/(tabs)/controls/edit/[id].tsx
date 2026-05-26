@@ -145,7 +145,7 @@ export default function EditControlScreen() {
         <AppBar title="Modifier" subtitle="Contrôle introuvable" left={{ icon: 'chevron-left', label: 'Retour', onPress: () => router.back() }} />
         <Card className="mt-6">
           <Text className="text-[14px] font-semibold text-slate-900 dark:text-white">Introuvable</Text>
-          <Text className="mt-1 text-[13px] text-slate-500 dark:text-slate-300">Ce contrôle n’existe pas dans le cache local.</Text>
+          <Text className="mt-1 text-[13px] text-slate-500 dark:text-slate-300">Ce contrôle est introuvable.</Text>
         </Card>
       </Screen>
     );

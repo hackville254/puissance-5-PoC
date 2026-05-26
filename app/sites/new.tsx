@@ -89,7 +89,7 @@ export default function NewSiteScreen() {
 
   return (
     <Screen>
-      <AppBar title="Nouveau site" subtitle="Créer un site (cache local)" left={{ icon: 'chevron-left', label: 'Retour', onPress: confirmClose }} />
+      <AppBar title="Nouveau site" subtitle="Créer un site" left={{ icon: 'chevron-left', label: 'Retour', onPress: confirmClose }} />
 
       <SectionHeader title="Informations" />
       <Card>

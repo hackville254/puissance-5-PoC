@@ -12,7 +12,7 @@ export function Card({
   className?: string;
   onPress?: () => void | Promise<void>;
 }) {
-  const base = 'rounded-3xl bg-white dark:bg-slate-900 p-4 shadow-sm border border-slate-100 dark:border-slate-800';
+  const base = 'rounded-2xl bg-white dark:bg-slate-900 p-4 shadow-sm border border-slate-100 dark:border-slate-800';
 
   if (onPress) {
     return (

@@ -48,7 +48,7 @@ export default function TemplateDetailScreen() {
         <AppBar title="Modèle" subtitle="Introuvable" left={{ icon: 'chevron-left', label: 'Retour', onPress: () => router.back() }} />
         <Card className="mt-6">
           <Text className="text-[14px] font-semibold text-slate-900 dark:text-white">Introuvable</Text>
-          <Text className="mt-1 text-[13px] text-slate-500 dark:text-slate-300">Ce modèle n’existe pas dans le cache local.</Text>
+          <Text className="mt-1 text-[13px] text-slate-500 dark:text-slate-300">Ce modèle est introuvable.</Text>
         </Card>
       </Screen>
     );

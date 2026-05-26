@@ -211,7 +211,7 @@ export default function ControlDetailScreen() {
         <AppBar title="Contrôle" subtitle="Détails" left={{ icon: 'chevron-left', label: 'Retour', onPress: () => router.back() }} />
         <Card className="mt-6">
           <Text className="text-[14px] font-semibold text-slate-900 dark:text-white">Introuvable</Text>
-          <Text className="mt-1 text-[13px] text-slate-500 dark:text-slate-300">Ce contrôle n’existe pas dans les données de démonstration.</Text>
+          <Text className="mt-1 text-[13px] text-slate-500 dark:text-slate-300">Ce contrôle est introuvable.</Text>
         </Card>
       </Screen>
     );
@@ -271,7 +271,7 @@ export default function ControlDetailScreen() {
         <Card className="mt-6">
           <Text className="text-[15px] font-semibold text-slate-900 dark:text-white">Prêt à démarrer</Text>
           <Text className="mt-1 text-[13px] text-slate-500 dark:text-slate-300">
-            Checklist, notation, photos avant/après et certifications. Données de démonstration + cache local.
+            Checklist, notation, photos avant/après et suivi des preuves.
           </Text>
           <Button
             label="Démarrer le contrôle"
@@ -398,7 +398,7 @@ export default function ControlDetailScreen() {
           <SectionHeader title="Photos avant / après" />
           <Card>
             <Text className="text-[14px] font-semibold text-slate-900 dark:text-white">Preuves</Text>
-            <Text className="mt-1 text-[13px] text-slate-500 dark:text-slate-300">Capture caméra + preuve GPS + signature locale (hors‑ligne).</Text>
+            <Text className="mt-1 text-[13px] text-slate-500 dark:text-slate-300">Ajoute les photos prises sur place pour documenter l’intervention.</Text>
             <View className="mt-4 flex-row gap-3">
               <Pressable onPress={() => setCameraMode({ kind: 'before' })} className="flex-1 rounded-2xl bg-slate-100 dark:bg-slate-800 p-4 active:opacity-90">
                 <View className="flex-row items-center justify-between">
@@ -421,7 +421,7 @@ export default function ControlDetailScreen() {
                   <Pressable
                     key={p.id}
                     onLongPress={() =>
-                      Alert.alert('Supprimer', 'Supprimer cette photo du cache local ?', [
+                      Alert.alert('Supprimer', 'Supprimer cette photo ?', [
                         { text: 'Annuler', style: 'cancel' },
                         { text: 'Supprimer', style: 'destructive', onPress: () => dispatch({ type: 'deleteInspectionPhoto', inspectionId: inspection.id, photoId: p.id }) }
                       ])

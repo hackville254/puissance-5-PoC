@@ -38,6 +38,10 @@ function RootNavigator() {
 
   useEffect(() => {
     if (!ready) return;
+    if (!isLoggedIn && pathname !== '/sign-in') {
+      router.replace('/sign-in');
+      return;
+    }
     if (!isLoggedIn) return;
     if (!canAccessPathname(state.role, pathname)) router.replace(defaultRouteForRole(state.role));
   }, [ready, isLoggedIn, state.role, pathname, router]);
@@ -50,7 +54,7 @@ function RootNavigator() {
     return (
       <View className="flex-1 items-center justify-center bg-slate-950">
         <Text className="text-[16px] font-semibold text-white">Chargement…</Text>
-        <Text className="mt-2 text-[13px] text-white/70">Initialisation du cache local</Text>
+        <Text className="mt-2 text-[13px] text-white/70">Préparation de votre espace</Text>
       </View>
     );
   }
@@ -66,6 +70,12 @@ function RootNavigator() {
         <Stack.Protected guard={isLoggedIn}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="reports/index" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="sites/index" />
+          <Stack.Screen name="sites/new" />
+          <Stack.Screen name="sites/[id]" />
+          <Stack.Screen name="templates/index" />
+          <Stack.Screen name="templates/new" />
+          <Stack.Screen name="templates/[id]" />
         </Stack.Protected>
       </Stack>
     </>

@@ -10,7 +10,6 @@ import type {
   Inspection,
   InspectionPhoto,
   PlannedControl,
-  Role,
   Severity,
   Site,
   ThemeMode
@@ -46,10 +45,6 @@ function readBoolean(value: unknown, fallback = false) {
 
 function readArray(value: unknown) {
   return Array.isArray(value) ? value : [];
-}
-
-function readRole(value: unknown, fallback: Role): Role {
-  return value === 'agent' || value === 'controller' || value === 'ops' || value === 'client' ? value : fallback;
 }
 
 function readThemeMode(value: unknown, fallback: ThemeMode): ThemeMode {
@@ -244,10 +239,11 @@ export function sanitizeForPersist(state: AppState): AppState {
 
   return {
     session: {
-      token: readOptionalString(state.session?.token, 128) ?? null,
-      userName: readString(state.session?.userName, '', 64)
+      // Do not restore authentication from local storage.
+      token: null,
+      userName: ''
     },
-    role: readRole(state.role, 'controller'),
+    role: 'controller',
     themeMode: readThemeMode(state.themeMode, 'system'),
     sites,
     templates,
@@ -262,13 +258,6 @@ export function normalizeLoadedState(base: AppState, parsed: unknown): AppState 
   if (!isRecord(parsed)) return base;
   const merged = sanitizeForPersist({
     ...base,
-    session: isRecord(parsed.session)
-      ? {
-          token: typeof parsed.session.token === 'string' ? parsed.session.token : null,
-          userName: readString(parsed.session.userName, '', 64)
-        }
-      : base.session,
-    role: readRole(parsed.role, base.role),
     themeMode: readThemeMode(parsed.themeMode, base.themeMode),
     sites: readArray(parsed.sites) as Site[],
     templates: readArray(parsed.templates) as ChecklistTemplate[],

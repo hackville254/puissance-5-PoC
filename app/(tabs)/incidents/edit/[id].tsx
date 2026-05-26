@@ -122,7 +122,7 @@ export default function EditIncidentScreen() {
         <AppBar title="Modifier" subtitle="Incident introuvable" left={{ icon: 'chevron-left', label: 'Retour', onPress: () => router.back() }} />
         <Card className="mt-6">
           <Text className="text-[14px] font-semibold text-slate-900 dark:text-white">Introuvable</Text>
-          <Text className="mt-1 text-[13px] text-slate-500 dark:text-slate-300">Cet incident n’existe pas dans le cache local.</Text>
+          <Text className="mt-1 text-[13px] text-slate-500 dark:text-slate-300">Cet incident est introuvable.</Text>
         </Card>
       </Screen>
     );
@@ -156,7 +156,7 @@ export default function EditIncidentScreen() {
             icon: 'trash',
             label: 'Supprimer',
             onPress: () =>
-              Alert.alert('Supprimer', 'Supprimer cet incident du cache local ?', [
+              Alert.alert('Supprimer', 'Supprimer cet incident ?', [
                 { text: 'Annuler', style: 'cancel' },
                 { text: 'Supprimer', style: 'destructive', onPress: () => dispatch({ type: 'deleteIncident', incidentId: incident.id }) }
               ])

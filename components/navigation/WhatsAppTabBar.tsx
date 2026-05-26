@@ -65,7 +65,7 @@ function TabItem({
           borderRadius: 18,
           paddingVertical: compact ? 4 : 6,
           paddingHorizontal: 4,
-          backgroundColor: focused ? 'rgba(37, 211, 102, 0.12)' : 'transparent'
+          backgroundColor: focused ? 'rgba(37, 99, 235, 0.12)' : 'transparent'
         }}
       >
         <Icon name={icon} size={compact ? 22 : 24} color={focused ? active : inactive} strokeWidth={2.35} />
@@ -99,12 +99,12 @@ export function WhatsAppTabBar(props: TabBarProps) {
   const [anim] = useState(() => new Animated.Value(0));
 
   const isDark = colorScheme === 'dark';
-  const bg = isDark ? '#111B21' : '#FFFFFF';
-  const border = isDark ? '#1F2C34' : '#E5E7EB';
-  const active = '#25D366';
-  const inactive = isDark ? '#A3B3BC' : '#6B7280';
-  const labelActive = isDark ? '#FFFFFF' : '#111827';
-  const labelInactive = isDark ? '#A3B3BC' : '#6B7280';
+  const bg = isDark ? '#0F172A' : '#FFFFFF';
+  const border = isDark ? '#1E293B' : '#E2E8F0';
+  const active = '#2563EB';
+  const inactive = isDark ? '#94A3B8' : '#64748B';
+  const labelActive = active;
+  const labelInactive = inactive;
 
   const tabs = useMemo(
     () => [
@@ -192,12 +192,12 @@ export function WhatsAppTabBar(props: TabBarProps) {
             backgroundColor: bg,
             borderColor: border,
             borderWidth: 1,
-            borderRadius: 30,
+            borderRadius: 24,
             paddingTop: 8,
             paddingBottom: 8,
             paddingHorizontal: 10,
-            shadowColor: '#000',
-            shadowOpacity: isDark ? 0.28 : 0.08,
+            shadowColor: active,
+            shadowOpacity: isDark ? 0.2 : 0.1,
             shadowRadius: 12,
             shadowOffset: { width: 0, height: 4 },
             elevation: 6
@@ -242,23 +242,23 @@ export function WhatsAppTabBar(props: TabBarProps) {
                 backgroundColor: active,
                 alignItems: 'center',
                 justifyContent: 'center',
-                shadowColor: '#000',
-                shadowOpacity: isDark ? 0.35 : 0.18,
+                shadowColor: active,
+                shadowOpacity: 0.28,
                 shadowRadius: 10,
                 shadowOffset: { width: 0, height: 8 },
                 elevation: 8,
-                transform: [{ translateY: -12 }]
+                transform: [{ translateY: -8 }]
               }}
             >
               <Icon name="plus" size={compact ? 28 : 30} color="#FFFFFF" strokeWidth={2.6} />
             </View>
-            <Text
+              <Text
               style={{
-                marginTop: -2,
-                fontSize: compact ? 10 : 11,
-                lineHeight: compact ? 12 : 13,
-                fontWeight: '700',
-                color: labelInactive
+                  marginTop: 2,
+                  fontSize: compact ? 10 : 11,
+                  lineHeight: compact ? 12 : 13,
+                  fontWeight: '700',
+                  color: labelInactive
               }}
             >
               Plus
@@ -296,7 +296,7 @@ export function WhatsAppTabBar(props: TabBarProps) {
           <Animated.View
             style={{
               transform: [{ translateY }],
-              backgroundColor: isDark ? '#0B141A' : '#FFFFFF',
+              backgroundColor: isDark ? '#0F172A' : '#FFFFFF',
               borderTopLeftRadius: 24,
               borderTopRightRadius: 24,
               paddingBottom: bottomPad,
@@ -306,7 +306,7 @@ export function WhatsAppTabBar(props: TabBarProps) {
           >
             <View style={{ paddingHorizontal: 16, paddingTop: 10, paddingBottom: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <Text style={{ fontSize: 14, fontWeight: '800', color: isDark ? '#FFFFFF' : '#111827' }}>Menu</Text>
-              <Pressable onPress={closeSheet} style={{ height: 36, width: 36, alignItems: 'center', justifyContent: 'center', borderRadius: 18, backgroundColor: isDark ? '#111B21' : '#F3F4F6' }}>
+              <Pressable onPress={closeSheet} style={{ height: 36, width: 36, alignItems: 'center', justifyContent: 'center', borderRadius: 12, backgroundColor: isDark ? '#111827' : '#EFF6FF' }}>
                 <Icon name="x" size={18} color={isDark ? '#FFFFFF' : '#111827'} strokeWidth={2.4} />
               </Pressable>
             </View>
@@ -331,8 +331,8 @@ export function WhatsAppTabBar(props: TabBarProps) {
                     style={{
                       width: 36,
                       height: 36,
-                      borderRadius: 18,
-                      backgroundColor: isDark ? '#111B21' : '#F3F4F6',
+                      borderRadius: 12,
+                      backgroundColor: isDark ? '#111827' : '#EFF6FF',
                       alignItems: 'center',
                       justifyContent: 'center',
                       marginRight: 12

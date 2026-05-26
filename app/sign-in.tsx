@@ -29,14 +29,14 @@ export default function SignInScreen() {
           <View className="flex-1 bg-brand-950">
             <View className="px-6 pt-12">
               <View className="flex-row items-center justify-between">
-                <Chip label="Mode démo • hors‑ligne" tone="brand" className="self-start bg-white/10 border-white/15" />
+                <Chip label="Accès rapide" tone="brand" className="self-start bg-white/10 border-white/15" />
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel="Aide"
                   onPress={() =>
                     Alert.alert(
                       'Aide',
-                      'Choisis un rôle (les accès changent selon le rôle) puis saisis un nom. Ce PoC ne demande pas de mot de passe et fonctionne hors‑ligne avec un cache local.'
+                      'Choisis un rôle puis saisis ton nom pour accéder à l’espace correspondant.'
                     )
                   }
                   className="rounded-full bg-white/10 border border-white/15 px-3 py-2"
@@ -46,14 +46,14 @@ export default function SignInScreen() {
               </View>
               <Text className="mt-5 text-[30px] font-extrabold text-white">Puissance 5</Text>
               <Text className="mt-2 text-[14px] text-white/70">
-                Contrôle qualité terrain, incidents, rapports — données de démonstration + cache local.
+                Contrôle qualité terrain, incidents et rapports pour vos équipes.
               </Text>
             </View>
 
             <View className="flex-1 justify-end px-5 pb-8">
               <Card className="bg-white/95 border-white/20">
                 <Text className="text-[16px] font-semibold text-slate-900">Connexion</Text>
-                <Text className="mt-1 text-[13px] text-slate-600">Choisis un rôle et un nom (pas de mot de passe dans ce PoC).</Text>
+                <Text className="mt-1 text-[13px] text-slate-600">Choisis un rôle et renseigne ton nom.</Text>
 
                 <Text className="mt-5 text-[12px] font-semibold text-slate-700">Nom</Text>
                 <View className="mt-2 rounded-2xl border border-slate-200 bg-white px-4 py-3">

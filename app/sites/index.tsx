@@ -23,7 +23,7 @@ export default function SitesScreen() {
         <>
       <AppBar
         title="Sites"
-        subtitle="Gestion (cache local)"
+        subtitle="Référentiel des sites"
         left={{ icon: 'chevron-left', label: 'Retour', onPress: () => router.back() }}
         right={[
           ...(canPerform(state.role, 'manage_sites')
