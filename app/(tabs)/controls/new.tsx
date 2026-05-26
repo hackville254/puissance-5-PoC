@@ -11,7 +11,7 @@ import { Icon } from '../../../components/ui/Icon';
 import { Screen } from '../../../components/ui/Screen';
 import { SectionHeader } from '../../../components/ui/SectionHeader';
 import { pad2, shortDateLabel, todayISODate } from '../../../lib/format';
-import { ensureNotificationPermission } from '../../../lib/notifications';
+import { scheduleLocalNotification } from '../../../lib/notifications';
 import type { ControlType, PlannedControl } from '../../../lib/models';
 import { useAppStore } from '../../../lib/store';
 
@@ -92,7 +92,6 @@ export default function NewControlScreen() {
   );
 
   const DateTimePicker: any = Platform.OS === 'web' ? null : require('@react-native-community/datetimepicker').default;
-  const Notifications: any = Platform.OS === 'web' ? null : require('expo-notifications');
   const isDark = colorScheme === 'dark';
   const overlay = isDark ? 'rgba(0,0,0,0.55)' : 'rgba(0,0,0,0.35)';
   const sheetBg = isDark ? '#0B141A' : '#FFFFFF';
@@ -143,26 +142,17 @@ export default function NewControlScreen() {
       assigneeName: assigneeName.trim().slice(0, 64) || 'Agent'
     };
     dispatch({ type: 'upsertPlannedControl', control });
-    if (Platform.OS !== 'web' && Notifications) {
-      try {
-        const granted = await ensureNotificationPermission();
-        if (granted) {
-          const start = timeToDate(control.date, control.startTime);
-          const triggerAt = new Date(start.getTime() - 15 * 60 * 1000);
-          if (triggerAt.getTime() > Date.now() + 10_000) {
-            await Notifications.scheduleNotificationAsync({
-              content: {
-                title: 'Contrôle à venir',
-                body: `Contrôle planifié à ${control.startTime}.`,
-                sound: true
-              },
-              trigger: triggerAt
-            });
-          }
-        } else {
-          Alert.alert('Notifications désactivées', 'Le rappel local n’a pas pu être activé sans permission.');
-        }
-      } catch {}
+    if (Platform.OS !== 'web') {
+      const start = timeToDate(control.date, control.startTime);
+      const result = await scheduleLocalNotification({
+        title: 'Controle a venir',
+        body: `Controle planifie a ${control.startTime}.`,
+        triggerAt: new Date(start.getTime() - 15 * 60 * 1000),
+        sound: true
+      });
+      if (result === 'denied') {
+        Alert.alert('Notifications désactivées', 'Le rappel local n’a pas pu être activé sans permission.');
+      }
     }
     router.back();
   };

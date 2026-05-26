@@ -21,6 +21,75 @@ type Action = {
   onPress: () => void;
 };
 
+function TabItem({
+  label,
+  icon,
+  focused,
+  active,
+  inactive,
+  labelActive,
+  labelInactive,
+  onPress,
+  compact
+}: {
+  label: string;
+  icon: IconName;
+  focused: boolean;
+  active: string;
+  inactive: string;
+  labelActive: string;
+  labelInactive: string;
+  onPress: () => void;
+  compact: boolean;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="tab"
+      accessibilityLabel={label}
+      accessibilityState={{ selected: focused }}
+      onPress={onPress}
+      style={({ pressed }) => ({
+        flex: 1,
+        minWidth: 0,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: compact ? 6 : 8,
+        opacity: pressed ? 0.85 : 1
+      })}
+    >
+      <View
+        style={{
+          minWidth: compact ? 56 : 62,
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderRadius: 18,
+          paddingVertical: compact ? 4 : 6,
+          paddingHorizontal: 4,
+          backgroundColor: focused ? 'rgba(37, 211, 102, 0.12)' : 'transparent'
+        }}
+      >
+        <Icon name={icon} size={compact ? 22 : 24} color={focused ? active : inactive} strokeWidth={2.35} />
+        <Text
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.82}
+          style={{
+            marginTop: 4,
+            fontSize: compact ? 10 : 11,
+            lineHeight: compact ? 12 : 13,
+            fontWeight: focused ? '700' : '600',
+            color: focused ? labelActive : labelInactive,
+            textAlign: 'center',
+            maxWidth: compact ? 58 : 64
+          }}
+        >
+          {label}
+        </Text>
+      </View>
+    </Pressable>
+  );
+}
+
 export function WhatsAppTabBar(props: TabBarProps) {
   const { colorScheme } = useColorScheme();
   const insets = useSafeAreaInsets();
@@ -61,6 +130,7 @@ export function WhatsAppTabBar(props: TabBarProps) {
     }
   };
   const visibleTabs = useMemo(() => tabs.filter(tab => canAccessPathname(state.role, routePathForTab(tab.name))), [state.role, tabs]);
+  const compact = visibleTabs.length >= 4;
   const splitIndex = Math.ceil(visibleTabs.length / 2);
   const leftTabs = visibleTabs.slice(0, splitIndex);
   const rightTabs = visibleTabs.slice(splitIndex);
@@ -109,45 +179,66 @@ export function WhatsAppTabBar(props: TabBarProps) {
 
   return (
     <>
-      <View style={{ backgroundColor: bg, borderTopColor: border, borderTopWidth: 1, paddingBottom: bottomPad, paddingTop: 8 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'flex-end', paddingHorizontal: 6 }}>
+      <View
+        style={{
+          backgroundColor: 'transparent',
+          paddingBottom: bottomPad,
+          paddingTop: 10,
+          paddingHorizontal: 14
+        }}
+      >
+        <View
+          style={{
+            backgroundColor: bg,
+            borderColor: border,
+            borderWidth: 1,
+            borderRadius: 30,
+            paddingTop: 8,
+            paddingBottom: 8,
+            paddingHorizontal: 10,
+            shadowColor: '#000',
+            shadowOpacity: isDark ? 0.28 : 0.08,
+            shadowRadius: 12,
+            shadowOffset: { width: 0, height: 4 },
+            elevation: 6
+          }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           {leftTabs.map(tab => {
             const routeIndex = props.state.routes.findIndex(r => matchesTab(r.name, tab.name));
             const focused = routeIndex === props.state.index;
             return (
-              <Pressable
+              <TabItem
                 key={tab.name}
+                label={tab.label}
+                icon={tab.icon}
+                focused={focused}
+                active={active}
+                inactive={inactive}
+                labelActive={labelActive}
+                labelInactive={labelInactive}
                 onPress={() => navigateToTab(tab.name)}
-                style={({ pressed }) => ({
-                  flex: 1,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  paddingVertical: 8,
-                  opacity: pressed ? 0.85 : 1
-                })}
-              >
-                <Icon name={tab.icon} size={26} color={focused ? active : inactive} strokeWidth={2.4} />
-                <Text style={{ marginTop: 4, fontSize: 11, fontWeight: focused ? '700' : '600', color: focused ? labelActive : labelInactive }}>
-                  {tab.label}
-                </Text>
-              </Pressable>
+                compact={compact}
+              />
             );
           })}
 
           <Pressable
             onPress={openSheet}
+            accessibilityRole="button"
+            accessibilityLabel="Plus d’actions"
             style={{
-              width: 64,
+              width: compact ? 72 : 78,
               alignItems: 'center',
               justifyContent: 'center',
-              marginBottom: -6
+              paddingTop: 2
             }}
           >
             <View
               style={{
-                width: 54,
-                height: 54,
-                borderRadius: 27,
+                width: compact ? 56 : 60,
+                height: compact ? 56 : 60,
+                borderRadius: compact ? 28 : 30,
                 backgroundColor: active,
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -156,37 +247,44 @@ export function WhatsAppTabBar(props: TabBarProps) {
                 shadowRadius: 10,
                 shadowOffset: { width: 0, height: 8 },
                 elevation: 8,
-                transform: [{ translateY: -10 }]
+                transform: [{ translateY: -12 }]
               }}
             >
-              <Icon name="plus" size={28} color="#FFFFFF" strokeWidth={2.6} />
+              <Icon name="plus" size={compact ? 28 : 30} color="#FFFFFF" strokeWidth={2.6} />
             </View>
-            <Text style={{ marginTop: -4, fontSize: 11, fontWeight: '700', color: labelInactive }}>Plus</Text>
+            <Text
+              style={{
+                marginTop: -2,
+                fontSize: compact ? 10 : 11,
+                lineHeight: compact ? 12 : 13,
+                fontWeight: '700',
+                color: labelInactive
+              }}
+            >
+              Plus
+            </Text>
           </Pressable>
 
           {rightTabs.map(tab => {
             const routeIndex = props.state.routes.findIndex(r => matchesTab(r.name, tab.name));
             const focused = routeIndex === props.state.index;
             return (
-              <Pressable
+              <TabItem
                 key={tab.name}
+                label={tab.label}
+                icon={tab.icon}
+                focused={focused}
+                active={active}
+                inactive={inactive}
+                labelActive={labelActive}
+                labelInactive={labelInactive}
                 onPress={() => navigateToTab(tab.name)}
-                style={({ pressed }) => ({
-                  flex: 1,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  paddingVertical: 8,
-                  opacity: pressed ? 0.85 : 1
-                })}
-              >
-                <Icon name={tab.icon} size={26} color={focused ? active : inactive} strokeWidth={2.4} />
-                <Text style={{ marginTop: 4, fontSize: 11, fontWeight: focused ? '700' : '600', color: focused ? labelActive : labelInactive }}>
-                  {tab.label}
-                </Text>
-              </Pressable>
+                compact={compact}
+              />
             );
           })}
         </View>
+      </View>
       </View>
 
       <Modal visible={open} transparent animationType="none" onRequestClose={closeSheet}>

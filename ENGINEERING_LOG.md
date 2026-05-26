@@ -1,3 +1,48 @@
+### [2026-05-26T00:17:59Z] | Resserage AppBar et modale visible
+- **Contexte :** L’en-tete restait encore trop verbeux et la symetrie des zones d’icones pouvait varier selon les pages. La modale d’aide devait aussi rester strictement dans l’espace visible.
+- **Modifications effectuees :**
+    - Reequilibrage de `components/ui/AppBar.tsx` avec largeurs laterales harmonisees pour les zones d’icones de navigation.
+    - Passage des actions d’en-tete en mode icone seule pour garder une lecture plus nette et plus stable.
+    - Reduction des textes d’aide et des libelles secondaires pour ne conserver que l’information utile.
+    - Limitation explicite de la hauteur de la modale a la hauteur visible de l’ecran avec scroll interne borne.
+- **Decisions Techniques :** J’ai prefere une AppBar plus compacte et plus reguliere, meme si cela reduit la quantite de texte exposee directement, car l’ergonomie mobile y gagne en clarte et en stabilite visuelle.
+- **Impacts & Dependances :** Fichier touche: `components/ui/AppBar.tsx`. `pnpm run test` passe apres ce resserrage.
+- **Prochaines étapes :** Verifier en simulateur que les pages avec plusieurs actions a droite gardent bien la meme impression d’equilibre visuel.
+
+### [2026-05-26T00:09:38Z] | Refonte AppBar et neutralisation du warning notifications
+- **Contexte :** L’utilisateur demandait de repenser `components/ui/AppBar.tsx` de zero avec une meilleure ergonomie, tout en supprimant le warning `expo-notifications` observe dans Expo Go.
+- **Modifications effectuees :**
+    - Recomposition majeure de `components/ui/AppBar.tsx` avec une structure plus lisible: meta-informations centrees, bloc titre plus stable, cartes d’orientation plus symetriques et modale d’aide mieux hierarchisee.
+    - Ajout de nouveaux sous-elements UI internes (`MetaPill`, `HelpBullet`) pour clarifier la lecture sans alourdir les ecrans consommateurs.
+    - Durcissement de `lib/notifications.ts` avec detection d’Expo Go via `expo-constants` et abandon propre de l’initialisation notifications quand l’environnement ne les supporte pas de maniere fiable.
+    - Remplacement des appels directs a `expo-notifications` dans `app/(tabs)/controls/new.tsx` et `app/(tabs)/incidents/new.tsx` par un helper de planification local centralise.
+    - Revalidation runtime via `pnpm exec expo start --ios --go --clear --port 8085` pour confirmer la disparition du warning au bundling Expo Go.
+- **Decisions Techniques :** J’ai choisi de traiter Expo Go comme un environnement a capacites reduites pour les notifications afin d’eviter les warnings repetitifs et les comportements incoherents. Cote UI, la refonte s’appuie sur une hiérarchie visuelle plus calme et des blocs d’information courts plutot que sur une AppBar monolithique.
+- **Impacts & Dependances :** Fichiers touches: `components/ui/AppBar.tsx`, `lib/notifications.ts`, `app/(tabs)/controls/new.tsx`, `app/(tabs)/incidents/new.tsx`. `pnpm run test` passe, et le bundling iOS Expo Go sur `8085` ne remonte plus le warning notifications.
+- **Prochaines étapes :** Verifier visuellement sur simulateur le confort de lecture du nouvel en-tete page par page, puis migrer vers un development build si l’on veut reintroduire des tests notifications natifs plus complets.
+
+### [2026-05-25T23:59:58Z] | Finition visuelle de l’accueil
+- **Contexte :** Apres la correction de l’en-tete et de la barre basse, l’ecran d’accueil restait en retrait visuellement, surtout sur la carte `Aujourd’hui` et les cartes `Sites du jour`.
+- **Modifications effectuees :**
+    - Refonte de la carte hero dans `app/(tabs)/index.tsx` avec meilleure hierarchie, deux blocs d’information symetriques et un texte d’accompagnement plus premium.
+    - Harmonisation des boutons d’action de l’accueil avec des libelles plus nets et une meilleure respiration.
+    - Recomposition des cartes `Sites du jour` avec index visuel, ville separee, statut mieux pose et ligne d’informations basse plus equilibree.
+    - Amelioration des cartes `Rapports recents` pour conserver le meme niveau de finition.
+- **Decisions Techniques :** J’ai prefere renforcer la structure de l’accueil directement dans l’ecran plutot que de complexifier `Card` globalement, afin de garder un composant de base simple et reutilisable.
+- **Impacts & Dependances :** Fichier touche: `app/(tabs)/index.tsx`. Validation effectuee avec `pnpm run test`.
+- **Prochaines étapes :** Faire une ultime passe sur `Alertes & Non-conformites` et `Raccourcis` si l’on veut un niveau de polish identique sur tout l’ecran d’accueil.
+
+### [2026-05-25T23:57:43Z] | Reequilibrage visuel AppBar et barre basse
+- **Contexte :** La capture montrait deux zones encore desequilibrees: l’en-tete semblait casse entre titre et icones, et la barre basse manquait de symetrie avec des labels trop serres.
+- **Modifications effectuees :**
+    - Recomposition de `components/ui/AppBar.tsx` avec une colonne titre plus stable et un groupe d’actions compact aligne a droite.
+    - Mise en avant plus nette de l’action d’aide dans l’en-tete.
+    - Remplacement du texte d’information trop technique par une formulation plus naturelle et orientee utilisateur.
+    - Refonte de `components/navigation/WhatsAppTabBar.tsx` avec une vraie structure symetrique, des items uniformes, des labels plus compacts et un bouton central mieux integre.
+- **Decisions Techniques :** J’ai privilegie une grille explicite et des largeurs maitrisees plutot qu’un layout auto qui se degrade vite sur petit ecran. Les textes ont ete simplifies pour rester lisibles et non techniques.
+- **Impacts & Dependances :** Fichiers touches: `components/ui/AppBar.tsx`, `components/navigation/WhatsAppTabBar.tsx`. `pnpm run test` passe apres la refonte.
+- **Prochaines étapes :** Verifier visuellement sur simulateur l’equilibre des zones corrigees en mode clair et sombre, puis ajuster au besoin les espacements du hero de la page d’accueil.
+
 ### [2026-05-25T23:49:42Z] | Validation runtime iOS Expo Go et correction des routes layout
 - **Contexte :** Le test de lancement iOS devait etre confirme en conditions reelles apres migration SDK 55. Le premier echec venait du mauvais dossier de lancement, puis le runtime a revele des warnings Expo Router sur des noms d’ecrans incorrects dans les layouts.
 - **Modifications effectuees :**

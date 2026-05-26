@@ -12,7 +12,7 @@ import { Screen } from '../../../components/ui/Screen';
 import { SectionHeader } from '../../../components/ui/SectionHeader';
 import type { Severity } from '../../../lib/models';
 import { addDaysISODate, pad2, shortDateLabel, todayISODate } from '../../../lib/format';
-import { ensureNotificationPermission } from '../../../lib/notifications';
+import { scheduleLocalNotification } from '../../../lib/notifications';
 import { useAppStore } from '../../../lib/store';
 
 function isoToDate(iso: string) {
@@ -70,7 +70,6 @@ export default function NewIncidentScreen() {
   const [picker, setPicker] = useState<null | { kind: 'occurredDate' | 'occurredTime' | 'dueDate' }>(null);
 
   const DateTimePicker: any = Platform.OS === 'web' ? null : require('@react-native-community/datetimepicker').default;
-  const Notifications: any = Platform.OS === 'web' ? null : require('expo-notifications');
   const isDark = colorScheme === 'dark';
   const overlay = isDark ? 'rgba(0,0,0,0.55)' : 'rgba(0,0,0,0.35)';
   const sheetBg = isDark ? '#0B141A' : '#FFFFFF';
@@ -137,25 +136,16 @@ export default function NewIncidentScreen() {
       description: description.trim().slice(0, 600),
       assignedTo: assignedTo.trim().slice(0, 64)
     });
-    if (due && Platform.OS !== 'web' && Notifications) {
-      try {
-        const granted = await ensureNotificationPermission();
-        if (granted) {
-          const triggerAt = timeToDate(due, '09:00');
-          if (triggerAt.getTime() > Date.now() + 10_000) {
-            await Notifications.scheduleNotificationAsync({
-              content: {
-                title: 'Échéance incident',
-                body: 'Une non-conformité arrive à échéance aujourd’hui.',
-                sound: true
-              },
-              trigger: triggerAt
-            });
-          }
-        } else {
-          Alert.alert('Notifications désactivées', 'Le rappel local n’a pas pu être activé sans permission.');
-        }
-      } catch {}
+    if (due && Platform.OS !== 'web') {
+      const result = await scheduleLocalNotification({
+        title: 'Echeance incident',
+        body: 'Une non-conformite arrive a echeance aujourd hui.',
+        triggerAt: timeToDate(due, '09:00'),
+        sound: true
+      });
+      if (result === 'denied') {
+        Alert.alert('Notifications désactivées', 'Le rappel local n’a pas pu être activé sans permission.');
+      }
     }
     router.back();
   };
