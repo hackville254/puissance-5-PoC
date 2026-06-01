@@ -1,15 +1,15 @@
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Alert, Modal, Platform, Pressable, Text, View } from 'react-native';
-import { useColorScheme } from 'nativewind';
-
+import { Alert, Platform, Pressable, Text, View } from 'react-native';
 import { AppBar } from '../../../components/ui/AppBar';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
-import { Chip } from '../../../components/ui/Chip';
-import { ChoiceBadge, ChoiceCard, FormField, PickerField, SearchField, TextField } from '../../../components/ui/FormControls';
+import { FormField, PickerField, TextField } from '../../../components/ui/FormControls';
+import { DateTimePickerSheet } from '../../../components/ui/DateTimePickerSheet';
+import { SegmentedControl } from '../../../components/ui/SegmentedControl';
 import { Screen } from '../../../components/ui/Screen';
 import { SectionHeader } from '../../../components/ui/SectionHeader';
+import { SitePickerModal } from '../../../components/ui/SitePickerModal';
 import { pad2, shortDateLabel, todayISODate } from '../../../lib/format';
 import { scheduleLocalNotification } from '../../../lib/notifications';
 import type { ControlType, PlannedControl } from '../../../lib/models';
@@ -51,53 +51,32 @@ function dateToTime(dt: Date) {
   return `${pad2(dt.getHours())}:${pad2(dt.getMinutes())}`;
 }
 
-const types: Array<{ label: string; value: ControlType }> = [
-  { label: 'Qualité', value: 'quality' },
-  { label: 'Avant/Après', value: 'beforeAfter' }
-];
-
 export default function NewControlScreen() {
   const router = useRouter();
   const { state, dispatch } = useAppStore();
-  const { colorScheme } = useColorScheme();
 
   const [siteId, setSiteId] = useState(state.sites[0]?.id ?? '');
-  const [siteQuery, setSiteQuery] = useState('');
   const [date, setDate] = useState(state.selectedDate || todayISODate());
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('09:45');
   const [type, setType] = useState<ControlType>('quality');
   const [assigneeName, setAssigneeName] = useState(state.session.userName || 'Agent');
   const [picker, setPicker] = useState<null | { kind: 'date' | 'start' | 'end' }>(null);
+  const [sitePickerOpen, setSitePickerOpen] = useState(false);
 
   const selectedSite = state.sites.find(s => s.id === siteId);
-
-  const filteredSites = useMemo(() => {
-    const q = siteQuery.trim().toLowerCase();
-    if (!q) return state.sites;
-    return state.sites.filter(s => `${s.name} ${s.city} ${s.address}`.toLowerCase().includes(q));
-  }, [siteQuery, state.sites]);
 
   const canCreate = useMemo(() => siteId && date.trim().length === 10 && startTime.trim().length >= 4 && endTime.trim().length >= 4, [siteId, date, startTime, endTime]);
   const hasDraftChanges = useMemo(
     () =>
       siteId !== (state.sites[0]?.id ?? '') ||
-      siteQuery.trim().length > 0 ||
       date !== (state.selectedDate || todayISODate()) ||
       startTime !== '09:00' ||
       endTime !== '09:45' ||
       type !== 'quality' ||
       assigneeName !== (state.session.userName || 'Agent'),
-    [assigneeName, date, endTime, siteId, siteQuery, startTime, state.selectedDate, state.session.userName, state.sites, type]
+    [assigneeName, date, endTime, siteId, startTime, state.selectedDate, state.session.userName, state.sites, type]
   );
-
-  const DateTimePicker: any = Platform.OS === 'web' ? null : require('@react-native-community/datetimepicker').default;
-  const isDark = colorScheme === 'dark';
-  const overlay = isDark ? 'rgba(0,0,0,0.55)' : 'rgba(0,0,0,0.35)';
-  const sheetBg = isDark ? '#0B141A' : '#FFFFFF';
-  const sheetBorder = isDark ? '#1F2C34' : '#E5E7EB';
-  const sheetText = isDark ? '#FFFFFF' : '#111827';
-  const sheetTextMuted = isDark ? 'rgba(255,255,255,0.7)' : '#6B7280';
 
   const openPicker = (kind: 'date' | 'start' | 'end') => setPicker({ kind });
   const closePicker = () => setPicker(null);
@@ -130,6 +109,9 @@ export default function NewControlScreen() {
     setEndTime(next);
   };
 
+  const pickerTitle = picker?.kind === 'date' ? 'Choisir une date' : picker?.kind === 'start' ? 'Heure de début' : 'Heure de fin';
+  const pickerSubtitle = picker?.kind === 'date' ? date : picker?.kind === 'start' ? startTime : endTime;
+
   const create = async () => {
     const control: PlannedControl = {
       id: uuid(),
@@ -158,35 +140,26 @@ export default function NewControlScreen() {
   };
 
   return (
-    <Screen>
+    <Screen
+      footer={
+        <View className="gap-3">
+          <Button label="Créer le contrôle" disabled={!canCreate} onPress={create} />
+          <Button label="Annuler" variant="secondary" onPress={confirmClose} />
+        </View>
+      }
+    >
       <AppBar title="Nouveau contrôle" subtitle="Planifier un contrôle" left={{ icon: 'chevron-left', label: 'Retour', onPress: confirmClose }} />
 
-      <SectionHeader title="Site" />
       <Card>
-        <FormField label="Site concerné" hint="Recherche un site puis sélectionne-le dans la liste.">
-          <SearchField
-            value={siteQuery}
-            onChangeText={setSiteQuery}
-            accessibilityLabel="Recherche de site"
-            placeholder="Rechercher un site"
-            onClear={() => setSiteQuery('')}
+        <FormField label="Site" icon="building">
+          <PickerField
+            value={selectedSite ? selectedSite.name : 'Choisir un site'}
+            description={selectedSite ? `${selectedSite.city} • ${selectedSite.address}` : 'Obligatoire'}
+            leftIcon="building"
+            icon="chevron-right"
+            onPress={() => setSitePickerOpen(true)}
           />
         </FormField>
-        <View className="mt-3 gap-2">
-          {filteredSites.map(s => {
-            const selected = s.id === siteId;
-            return (
-              <ChoiceCard
-                key={s.id}
-                title={s.name}
-                description={`${s.city} • ${s.address}`}
-                selected={selected}
-                onPress={() => setSiteId(s.id)}
-                badge={selected ? <ChoiceBadge label="Sélectionné" tone="brand" /> : undefined}
-              />
-            );
-          })}
-        </View>
       </Card>
 
       <SectionHeader title="Planning" />
@@ -196,38 +169,38 @@ export default function NewControlScreen() {
             <View className="flex-row gap-3">
               <View className="flex-1">
                 <FormField label="Date" hint="Format AAAA-MM-JJ">
-                  <TextField value={date} onChangeText={setDate} keyboardType="numbers-and-punctuation" autoCapitalize="none" autoCorrect={false} />
+                  <TextField leftIcon="calendar" value={date} onChangeText={setDate} keyboardType="numbers-and-punctuation" autoCapitalize="none" autoCorrect={false} />
                 </FormField>
               </View>
             </View>
             <View className="mt-4 flex-row gap-3">
               <View className="flex-1">
                 <FormField label="Début" hint="Format HH:MM">
-                  <TextField value={startTime} onChangeText={setStartTime} keyboardType="numbers-and-punctuation" autoCapitalize="none" autoCorrect={false} />
+                  <TextField leftIcon="chevron-right" value={startTime} onChangeText={setStartTime} keyboardType="numbers-and-punctuation" autoCapitalize="none" autoCorrect={false} />
                 </FormField>
               </View>
               <View className="flex-1">
                 <FormField label="Fin" hint="Format HH:MM">
-                  <TextField value={endTime} onChangeText={setEndTime} keyboardType="numbers-and-punctuation" autoCapitalize="none" autoCorrect={false} />
+                  <TextField leftIcon="chevron-right" value={endTime} onChangeText={setEndTime} keyboardType="numbers-and-punctuation" autoCapitalize="none" autoCorrect={false} />
                 </FormField>
               </View>
             </View>
           </>
         ) : (
           <>
-            <FormField label="Date">
-              <PickerField value={shortDateLabel(date)} description={date} icon="calendar" onPress={() => openPicker('date')} />
+            <FormField label="Date" icon="calendar">
+              <PickerField value={shortDateLabel(date)} description={date} leftIcon="calendar" icon="chevron-right" onPress={() => openPicker('date')} />
             </FormField>
 
             <View className="mt-4 flex-row gap-3">
               <View className="flex-1">
-                <FormField label="Début">
-                  <PickerField value={startTime} icon="chevron-right" onPress={() => openPicker('start')} />
+                <FormField label="Début" icon="chevron-right">
+                  <PickerField value={startTime} leftIcon="chevron-right" icon="chevron-right" onPress={() => openPicker('start')} />
                 </FormField>
               </View>
               <View className="flex-1">
-                <FormField label="Fin">
-                  <PickerField value={endTime} icon="chevron-right" onPress={() => openPicker('end')} />
+                <FormField label="Fin" icon="chevron-right">
+                  <PickerField value={endTime} leftIcon="chevron-right" icon="chevron-right" onPress={() => openPicker('end')} />
                 </FormField>
               </View>
             </View>
@@ -245,94 +218,26 @@ export default function NewControlScreen() {
               ))}
             </View>
             </FormField>
-
-            <Modal visible={Boolean(picker)} transparent animationType="fade" onRequestClose={closePicker}>
-              <Pressable onPress={closePicker} style={{ flex: 1, backgroundColor: overlay, justifyContent: 'flex-end' }}>
-                <Pressable
-                  onPress={() => {}}
-                  style={{
-                    backgroundColor: sheetBg,
-                    borderTopLeftRadius: 24,
-                    borderTopRightRadius: 24,
-                    borderTopWidth: 1,
-                    borderTopColor: sheetBorder,
-                    paddingHorizontal: 14,
-                    paddingTop: 12,
-                    paddingBottom: 18
-                  }}
-                >
-                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 6, paddingBottom: 10 }}>
-                    <View>
-                      <Text style={{ fontSize: 14, fontWeight: '800', color: sheetText }}>
-                        {picker?.kind === 'date' ? 'Choisir une date' : picker?.kind === 'start' ? 'Heure de début' : 'Heure de fin'}
-                      </Text>
-                      <Text style={{ marginTop: 2, fontSize: 12, fontWeight: '600', color: sheetTextMuted }}>
-                        {picker?.kind === 'date' ? date : picker?.kind === 'start' ? startTime : endTime}
-                      </Text>
-                    </View>
-                    <Pressable onPress={closePicker} style={{ height: 36, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center', borderRadius: 999, backgroundColor: isDark ? '#111B21' : '#F3F4F6' }}>
-                      <Text style={{ fontSize: 13, fontWeight: '800', color: sheetText }}>OK</Text>
-                    </Pressable>
-                  </View>
-
-                  {picker && DateTimePicker ? (
-                    <DateTimePicker
-                      value={
-                        picker.kind === 'date'
-                          ? isoToDate(date)
-                          : picker.kind === 'start'
-                            ? timeToDate(date, startTime)
-                            : timeToDate(date, endTime)
-                      }
-                      mode={picker.kind === 'date' ? 'date' : 'time'}
-                      display={Platform.OS === 'ios' ? (picker.kind === 'date' ? 'inline' : 'spinner') : 'default'}
-                      onChange={(event: any, selected?: Date) => {
-                        if (Platform.OS === 'android') {
-                          if (event?.type === 'dismissed') return closePicker();
-                          if (event?.type === 'set' && selected) {
-                            if (picker.kind === 'date') onPickedDate(selected);
-                            if (picker.kind === 'start') onPickedStart(selected);
-                            if (picker.kind === 'end') onPickedEnd(selected);
-                            return closePicker();
-                          }
-                          return;
-                        }
-                        if (!selected) return;
-                        if (picker.kind === 'date') onPickedDate(selected);
-                        if (picker.kind === 'start') onPickedStart(selected);
-                        if (picker.kind === 'end') onPickedEnd(selected);
-                      }}
-                    />
-                  ) : null}
-                </Pressable>
-              </Pressable>
-            </Modal>
           </>
         )}
       </Card>
 
       <SectionHeader title="Type" />
-      <View className="flex-row gap-2">
-        {types.map(t => {
-          const selected = t.value === type;
-          return (
-            <ChoiceCard
-              key={t.value}
-              title={t.label}
-              description={t.value === 'quality' ? 'Checklist, note et commentaires' : 'Constat visuel avant / après'}
-              selected={selected}
-              onPress={() => setType(t.value)}
-              className="flex-1"
-              badge={<ChoiceBadge label={t.value === 'quality' ? 'QA' : 'A/A'} tone="neutral" />}
-            />
-          );
-        })}
-      </View>
-
-      <SectionHeader title="Assignation" />
       <Card>
-        <FormField label="Assigné à" hint="Nom de la personne responsable du contrôle.">
+        <SegmentedControl
+          value={type}
+          onChange={setType}
+          items={[
+            { label: 'Qualité', value: 'quality', icon: 'clipboard-check', tone: 'brand' },
+            { label: 'Avant / Après', value: 'beforeAfter', icon: 'camera', tone: 'neutral' }
+          ]}
+        />
+      </Card>
+
+      <Card>
+        <FormField label="Assigné à" icon="user" hint="Nom de la personne responsable du contrôle.">
           <TextField
+            leftIcon="user"
             accessibilityLabel="Nom de la personne assignée"
             value={assigneeName}
             onChangeText={setAssigneeName}
@@ -341,24 +246,33 @@ export default function NewControlScreen() {
           />
         </FormField>
       </Card>
-
-      <SectionHeader title="Aperçu" />
-      <Card>
-        <Text className="text-[14px] font-semibold text-slate-900 dark:text-white">Contrôle {type === 'quality' ? 'Qualité' : 'Avant/Après'}</Text>
-        <Text className="mt-1 text-[13px] text-slate-500 dark:text-slate-300">
-          {selectedSite ? `${selectedSite.name} • ${selectedSite.city}` : 'Sélectionne un site'}
-        </Text>
-        <View className="mt-3 flex-row flex-wrap gap-2">
-          <Chip label={`${date} • ${startTime}-${endTime}`} tone="brand" />
-          <Chip label={type === 'quality' ? 'Checklist + note' : 'Photos avant/après'} tone="neutral" />
-          {assigneeName.trim().length > 0 ? <Chip label={`Assigné: ${assigneeName.trim()}`} tone="neutral" /> : null}
-        </View>
-      </Card>
-
-      <View className="mt-6 gap-3">
-        <Button label="Créer le contrôle" disabled={!canCreate} onPress={create} />
-        <Button label="Annuler" variant="secondary" onPress={confirmClose} />
-      </View>
+      <SitePickerModal
+        visible={sitePickerOpen}
+        sites={state.sites}
+        selectedSiteId={siteId}
+        onClose={() => setSitePickerOpen(false)}
+        onSelect={setSiteId}
+      />
+      <DateTimePickerSheet
+        visible={Boolean(picker) && Platform.OS !== 'web'}
+        title={pickerTitle}
+        subtitle={pickerSubtitle}
+        mode={picker?.kind === 'date' ? 'date' : 'time'}
+        value={
+          picker?.kind === 'date'
+            ? isoToDate(date)
+            : picker?.kind === 'start'
+              ? timeToDate(date, startTime)
+              : timeToDate(date, endTime)
+        }
+        onClose={closePicker}
+        onPicked={dt => {
+          if (!picker) return;
+          if (picker.kind === 'date') onPickedDate(dt);
+          if (picker.kind === 'start') onPickedStart(dt);
+          if (picker.kind === 'end') onPickedEnd(dt);
+        }}
+      />
     </Screen>
   );
 }

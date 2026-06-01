@@ -21,8 +21,10 @@ export function Chip({ label, tone = 'neutral', className }: { label: string; to
     danger: 'text-rose-700 dark:text-rose-200'
   };
   return (
-    <View className={cn(base, byTone[tone], className)}>
-      <Text className={cn('text-[12px] font-medium', textByTone[tone])}>{label}</Text>
+    <View className={cn(base, byTone[tone], className)} style={{ maxWidth: '100%', flexShrink: 1 }}>
+      <Text numberOfLines={1} ellipsizeMode="tail" className={cn('text-[12px] font-medium', textByTone[tone])}>
+        {label}
+      </Text>
     </View>
   );
 }

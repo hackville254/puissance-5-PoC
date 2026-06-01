@@ -37,7 +37,13 @@ export default function ProfileScreen() {
         subtitle="Préférences et accès"
         right={
           canPerform(state.role, 'manage_templates') || canPerform(state.role, 'manage_sites')
-            ? [{ icon: 'settings', label: 'Administration', onPress: () => router.push(routes.sites) }]
+            ? [
+                {
+                  icon: 'settings',
+                  label: 'Administration',
+                  onPress: () => router.push(canPerform(state.role, 'manage_sites') ? routes.sites : routes.templates)
+                }
+              ]
             : undefined
         }
       />

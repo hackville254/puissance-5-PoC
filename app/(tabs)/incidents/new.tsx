@@ -1,15 +1,16 @@
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Alert, Modal, Platform, Pressable, Text, View } from 'react-native';
-import { useColorScheme } from 'nativewind';
-
+import { Alert, Platform, Pressable, Text, View } from 'react-native';
 import { AppBar } from '../../../components/ui/AppBar';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
-import { Chip } from '../../../components/ui/Chip';
-import { ChoiceBadge, ChoiceCard, FormField, PickerField, SearchField, TextField } from '../../../components/ui/FormControls';
+import { DisclosureSection } from '../../../components/ui/DisclosureSection';
+import { FormField, PickerField, TextField } from '../../../components/ui/FormControls';
+import { DateTimePickerSheet } from '../../../components/ui/DateTimePickerSheet';
 import { Screen } from '../../../components/ui/Screen';
+import { SegmentedControl } from '../../../components/ui/SegmentedControl';
 import { SectionHeader } from '../../../components/ui/SectionHeader';
+import { SitePickerModal } from '../../../components/ui/SitePickerModal';
 import type { Severity } from '../../../lib/models';
 import { addDaysISODate, pad2, shortDateLabel, todayISODate } from '../../../lib/format';
 import { scheduleLocalNotification } from '../../../lib/notifications';
@@ -47,20 +48,12 @@ function toISODateTime(isoDate: string, time: string) {
   return timeToDate(isoDate, time).toISOString();
 }
 
-const severities: Array<{ label: string; value: Severity; tone: 'danger' | 'warning' | 'neutral' }> = [
-  { label: 'Critique', value: 'critique', tone: 'danger' },
-  { label: 'Majeure', value: 'majeure', tone: 'warning' },
-  { label: 'Mineure', value: 'mineure', tone: 'neutral' }
-];
-
 export default function NewIncidentScreen() {
   const router = useRouter();
   const { state, dispatch } = useAppStore();
-  const { colorScheme } = useColorScheme();
 
   const [siteId, setSiteId] = useState(state.sites[0]?.id ?? '');
   const [severity, setSeverity] = useState<Severity>('majeure');
-  const [siteQuery, setSiteQuery] = useState('');
   const [occurredDate, setOccurredDate] = useState(state.selectedDate || todayISODate());
   const [occurredTime, setOccurredTime] = useState(minutesToTime(timeToMinutes(new Date().toTimeString().slice(0, 5))));
   const [dueDate, setDueDate] = useState<string | null>(null);
@@ -68,22 +61,9 @@ export default function NewIncidentScreen() {
   const [description, setDescription] = useState('Décris le problème, la zone concernée, et l’action attendue.');
   const [assignedTo, setAssignedTo] = useState('Chef d’équipe');
   const [picker, setPicker] = useState<null | { kind: 'occurredDate' | 'occurredTime' | 'dueDate' }>(null);
-
-  const DateTimePicker: any = Platform.OS === 'web' ? null : require('@react-native-community/datetimepicker').default;
-  const isDark = colorScheme === 'dark';
-  const overlay = isDark ? 'rgba(0,0,0,0.55)' : 'rgba(0,0,0,0.35)';
-  const sheetBg = isDark ? '#0B141A' : '#FFFFFF';
-  const sheetBorder = isDark ? '#1F2C34' : '#E5E7EB';
-  const sheetText = isDark ? '#FFFFFF' : '#111827';
-  const sheetTextMuted = isDark ? 'rgba(255,255,255,0.7)' : '#6B7280';
+  const [sitePickerOpen, setSitePickerOpen] = useState(false);
 
   const selectedSite = state.sites.find(s => s.id === siteId);
-
-  const filteredSites = useMemo(() => {
-    const q = siteQuery.trim().toLowerCase();
-    if (!q) return state.sites;
-    return state.sites.filter(s => `${s.name} ${s.city} ${s.address}`.toLowerCase().includes(q));
-  }, [siteQuery, state.sites]);
 
   const canCreate = useMemo(() => {
     const baseOk = siteId && title.trim().length >= 4 && description.trim().length >= 8;
@@ -94,13 +74,12 @@ export default function NewIncidentScreen() {
     () =>
       siteId !== (state.sites[0]?.id ?? '') ||
       severity !== 'majeure' ||
-      siteQuery.trim().length > 0 ||
       occurredDate !== (state.selectedDate || todayISODate()) ||
       dueDate !== null ||
       title !== 'Zone non nettoyée' ||
       description !== 'Décris le problème, la zone concernée, et l’action attendue.' ||
       assignedTo !== 'Chef d’équipe',
-    [assignedTo, description, dueDate, occurredDate, severity, siteId, siteQuery, state.selectedDate, state.sites, title]
+    [assignedTo, description, dueDate, occurredDate, severity, siteId, state.selectedDate, state.sites, title]
   );
 
   const openPicker = (kind: 'occurredDate' | 'occurredTime' | 'dueDate') => setPicker({ kind });
@@ -123,6 +102,9 @@ export default function NewIncidentScreen() {
     if (picker.kind === 'occurredTime') setOccurredTime(dateToTime(dt));
     if (picker.kind === 'dueDate') setDueDate(todayISODate(dt));
   };
+
+  const pickerTitle = picker?.kind === 'occurredDate' ? 'Choisir une date' : picker?.kind === 'occurredTime' ? 'Choisir une heure' : 'Choisir une échéance';
+  const pickerSubtitle = picker?.kind === 'occurredDate' ? occurredDate : picker?.kind === 'occurredTime' ? occurredTime : dueDate ?? 'Aucune';
 
   const create = async () => {
     const due = dueDate || undefined;
@@ -151,35 +133,26 @@ export default function NewIncidentScreen() {
   };
 
   return (
-    <Screen>
+    <Screen
+      footer={
+        <View className="gap-3">
+          <Button label="Créer l’incident" disabled={!canCreate} onPress={create} />
+          <Button label="Annuler" variant="secondary" onPress={confirmClose} />
+        </View>
+      }
+    >
       <AppBar title="Nouvel incident" subtitle="Créer une non-conformité" left={{ icon: 'chevron-left', label: 'Retour', onPress: confirmClose }} />
 
-      <SectionHeader title="Site" />
       <Card>
-        <FormField label="Site concerné" hint="Recherche un site puis sélectionne-le dans la liste.">
-          <SearchField
-            value={siteQuery}
-            onChangeText={setSiteQuery}
-            accessibilityLabel="Recherche de site"
-            placeholder="Rechercher un site"
-            onClear={() => setSiteQuery('')}
+        <FormField label="Site" icon="building">
+          <PickerField
+            value={selectedSite ? selectedSite.name : 'Choisir un site'}
+            description={selectedSite ? `${selectedSite.city} • ${selectedSite.address}` : 'Obligatoire'}
+            leftIcon="building"
+            icon="chevron-right"
+            onPress={() => setSitePickerOpen(true)}
           />
         </FormField>
-        <View className="mt-3 gap-2">
-          {filteredSites.map(s => {
-            const selected = s.id === siteId;
-            return (
-              <ChoiceCard
-                key={s.id}
-                title={s.name}
-                description={`${s.city} • ${s.address}`}
-                selected={selected}
-                onPress={() => setSiteId(s.id)}
-                badge={selected ? <ChoiceBadge label="Sélectionné" tone="brand" /> : undefined}
-              />
-            );
-          })}
-        </View>
       </Card>
 
       <SectionHeader title="Constat" />
@@ -188,12 +161,12 @@ export default function NewIncidentScreen() {
           <View className="flex-row gap-3">
             <View className="flex-1">
               <FormField label="Date" hint="Format AAAA-MM-JJ">
-                <TextField value={occurredDate} onChangeText={setOccurredDate} keyboardType="numbers-and-punctuation" autoCapitalize="none" autoCorrect={false} />
+                <TextField leftIcon="calendar" value={occurredDate} onChangeText={setOccurredDate} keyboardType="numbers-and-punctuation" autoCapitalize="none" autoCorrect={false} />
               </FormField>
             </View>
             <View className="flex-1">
               <FormField label="Heure" hint="Format HH:MM">
-                <TextField value={occurredTime} onChangeText={setOccurredTime} keyboardType="numbers-and-punctuation" autoCapitalize="none" autoCorrect={false} />
+                <TextField leftIcon="chevron-right" value={occurredTime} onChangeText={setOccurredTime} keyboardType="numbers-and-punctuation" autoCapitalize="none" autoCorrect={false} />
               </FormField>
             </View>
           </View>
@@ -201,76 +174,76 @@ export default function NewIncidentScreen() {
           <>
             <View className="flex-row gap-3">
               <View className="flex-1">
-                <FormField label="Date">
-                  <PickerField value={shortDateLabel(occurredDate)} description={occurredDate} icon="calendar" onPress={() => openPicker('occurredDate')} />
+                <FormField label="Date" icon="calendar">
+                  <PickerField value={shortDateLabel(occurredDate)} description={occurredDate} leftIcon="calendar" icon="chevron-right" onPress={() => openPicker('occurredDate')} />
                 </FormField>
               </View>
               <View className="flex-1">
-                <FormField label="Heure">
-                  <PickerField value={occurredTime} icon="chevron-right" onPress={() => openPicker('occurredTime')} />
+                <FormField label="Heure" icon="chevron-right">
+                  <PickerField value={occurredTime} leftIcon="chevron-right" icon="chevron-right" onPress={() => openPicker('occurredTime')} />
                 </FormField>
               </View>
             </View>
-
-            <FormField label="Échéance de correction" hint="Optionnel, pour le suivi et les rappels.">
-              <PickerField
-                value={dueDate ? shortDateLabel(dueDate) : 'Aucune'}
-                description={dueDate ?? 'Rappel et suivi exploitation'}
-                icon="chevron-right"
-                onPress={() => openPicker('dueDate')}
-              />
-
-              <View className="mt-3 flex-row gap-2">
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Retirer l’échéance"
-                  onPress={() => setDueDate(null)}
-                  className="flex-1 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-3 py-3 active:opacity-90"
-                >
-                  <Text className="text-center text-[12px] font-semibold text-slate-700 dark:text-slate-200">Aucune</Text>
-                </Pressable>
-                {[0, 1, 2].map(d => (
-                  <Pressable
-                    key={d}
-                    accessibilityRole="button"
-                    accessibilityLabel={d === 0 ? 'Échéance aujourd’hui' : `Échéance dans ${d} jour${d > 1 ? 's' : ''}`}
-                    onPress={() => setDueDate(addDaysISODate(occurredDate, d))}
-                    className="flex-1 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-3 py-3 active:opacity-90"
-                  >
-                    <Text className="text-center text-[12px] font-semibold text-slate-700 dark:text-slate-200">{d === 0 ? 'Aujourd’hui' : `+${d}j`}</Text>
-                  </Pressable>
-                ))}
-              </View>
-            </FormField>
           </>
         )}
       </Card>
 
-      <SectionHeader title="Sévérité" />
-      <View className="flex-row gap-2">
-        {severities.map(s => {
-          const selected = s.value === severity;
-          return (
-            <ChoiceCard
-              key={s.value}
-              title={s.label}
-              description={s.value}
-              selected={selected}
-              onPress={() => setSeverity(s.value)}
-              className="flex-1"
-              badge={<ChoiceBadge label={s.value} tone={s.tone} />}
+      {Platform.OS !== 'web' ? (
+        <DisclosureSection title="Échéance (optionnel)" subtitle={dueDate ? shortDateLabel(dueDate) : 'Aucune'} icon="calendar" defaultOpen={false} className="mt-4">
+          <FormField label="Échéance de correction" icon="calendar" hint="Rappels et suivi exploitation.">
+            <PickerField
+              value={dueDate ? shortDateLabel(dueDate) : 'Aucune'}
+              description={dueDate ?? 'Suivi exploitation'}
+              leftIcon="calendar"
+              icon="chevron-right"
+              onPress={() => openPicker('dueDate')}
             />
-          );
-        })}
-      </View>
+
+            <View className="mt-3 flex-row gap-2">
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Retirer l’échéance"
+                onPress={() => setDueDate(null)}
+                className="flex-1 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-3 py-3 active:opacity-90"
+              >
+                <Text className="text-center text-[12px] font-semibold text-slate-700 dark:text-slate-200">Aucune</Text>
+              </Pressable>
+              {[0, 1, 2].map(d => (
+                <Pressable
+                  key={d}
+                  accessibilityRole="button"
+                  accessibilityLabel={d === 0 ? 'Échéance aujourd’hui' : `Échéance dans ${d} jour${d > 1 ? 's' : ''}`}
+                  onPress={() => setDueDate(addDaysISODate(occurredDate, d))}
+                  className="flex-1 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-3 py-3 active:opacity-90"
+                >
+                  <Text className="text-center text-[12px] font-semibold text-slate-700 dark:text-slate-200">{d === 0 ? 'Aujourd’hui' : `+${d}j`}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </FormField>
+        </DisclosureSection>
+      ) : null}
+
+      <SectionHeader title="Sévérité" />
+      <Card>
+        <SegmentedControl
+          value={severity}
+          onChange={setSeverity}
+          items={[
+            { label: 'Critique', value: 'critique', tone: 'danger' },
+            { label: 'Majeure', value: 'majeure', tone: 'warning' },
+            { label: 'Mineure', value: 'mineure', tone: 'neutral' }
+          ]}
+        />
+      </Card>
 
       <SectionHeader title="Détails" />
       <Card>
-        <FormField label="Titre">
-          <TextField accessibilityLabel="Titre de l’incident" value={title} onChangeText={setTitle} autoCapitalize="sentences" />
+        <FormField label="Titre" icon="pencil">
+          <TextField leftIcon="pencil" accessibilityLabel="Titre de l’incident" value={title} onChangeText={setTitle} autoCapitalize="sentences" />
         </FormField>
 
-        <FormField label="Description" className="mt-4">
+        <FormField label="Description" icon="clipboard-check" className="mt-4">
           <TextField
             value={description}
             onChangeText={setDescription}
@@ -280,92 +253,32 @@ export default function NewIncidentScreen() {
           />
         </FormField>
 
-        <FormField label="Assigné à" className="mt-4">
-          <TextField accessibilityLabel="Responsable assigné" value={assignedTo} onChangeText={setAssignedTo} autoCapitalize="words" autoCorrect={false} />
+        <FormField label="Assigné à" icon="user" className="mt-4">
+          <TextField leftIcon="user" accessibilityLabel="Responsable assigné" value={assignedTo} onChangeText={setAssignedTo} autoCapitalize="words" autoCorrect={false} />
         </FormField>
       </Card>
-
-      <SectionHeader title="Aperçu" />
-      <Card>
-        <Text className="text-[14px] font-semibold text-slate-900 dark:text-white">{title.trim() || 'Incident'}</Text>
-        <Text className="mt-1 text-[13px] text-slate-500 dark:text-slate-300">{selectedSite ? `${selectedSite.name} • ${selectedSite.city}` : 'Sélectionne un site'}</Text>
-        <View className="mt-3 flex-row flex-wrap gap-2">
-          <Chip label={severity} tone={severity === 'critique' ? 'danger' : severity === 'majeure' ? 'warning' : 'neutral'} />
-          <Chip label={`${occurredDate} • ${occurredTime}`} tone="brand" />
-          {dueDate ? <Chip label={`Échéance: ${dueDate}`} tone="neutral" /> : null}
-          {assignedTo.trim().length > 0 ? <Chip label={`Assigné: ${assignedTo.trim()}`} tone="neutral" /> : null}
-        </View>
-        <Text className="mt-3 text-[13px] text-slate-600 dark:text-slate-300">
-          {description.trim().slice(0, 140) || 'Ajoute une description pour un suivi exploitable.'}
-        </Text>
-      </Card>
-
-      <View className="mt-6 gap-3">
-        <Button label="Créer l’incident" disabled={!canCreate} onPress={create} />
-        <Button
-          label="Annuler"
-          variant="secondary"
-          onPress={confirmClose}
-        />
-      </View>
-
-      <Modal visible={Boolean(picker) && Platform.OS !== 'web'} transparent animationType="fade" onRequestClose={closePicker}>
-        <Pressable onPress={closePicker} style={{ flex: 1, backgroundColor: overlay, justifyContent: 'flex-end' }}>
-          <Pressable
-            onPress={() => {}}
-            style={{
-              backgroundColor: sheetBg,
-              borderTopLeftRadius: 24,
-              borderTopRightRadius: 24,
-              borderTopWidth: 1,
-              borderTopColor: sheetBorder,
-              paddingHorizontal: 14,
-              paddingTop: 12,
-              paddingBottom: 18
-            }}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 6, paddingBottom: 10 }}>
-              <View>
-                <Text style={{ fontSize: 14, fontWeight: '800', color: sheetText }}>
-                  {picker?.kind === 'occurredDate' ? 'Choisir une date' : picker?.kind === 'occurredTime' ? 'Choisir une heure' : 'Choisir une échéance'}
-                </Text>
-                <Text style={{ marginTop: 2, fontSize: 12, fontWeight: '600', color: sheetTextMuted }}>
-                  {picker?.kind === 'occurredDate' ? occurredDate : picker?.kind === 'occurredTime' ? occurredTime : dueDate ?? 'Aucune'}
-                </Text>
-              </View>
-              <Pressable onPress={closePicker} style={{ height: 36, paddingHorizontal: 12, alignItems: 'center', justifyContent: 'center', borderRadius: 999, backgroundColor: isDark ? '#111B21' : '#F3F4F6' }}>
-                <Text style={{ fontSize: 13, fontWeight: '800', color: sheetText }}>OK</Text>
-              </Pressable>
-            </View>
-
-            {picker && DateTimePicker ? (
-              <DateTimePicker
-                value={
-                  picker.kind === 'occurredDate'
-                    ? isoToDate(occurredDate)
-                    : picker.kind === 'occurredTime'
-                      ? timeToDate(occurredDate, occurredTime)
-                      : isoToDate(dueDate ?? occurredDate)
-                }
-                mode={picker.kind === 'occurredTime' ? 'time' : 'date'}
-                display={Platform.OS === 'ios' ? (picker.kind === 'occurredTime' ? 'spinner' : 'inline') : 'default'}
-                onChange={(event: any, selected?: Date) => {
-                  if (Platform.OS === 'android') {
-                    if (event?.type === 'dismissed') return closePicker();
-                    if (event?.type === 'set' && selected) {
-                      applyPicked(selected);
-                      return closePicker();
-                    }
-                    return;
-                  }
-                  if (!selected) return;
-                  applyPicked(selected);
-                }}
-              />
-            ) : null}
-          </Pressable>
-        </Pressable>
-      </Modal>
+      <SitePickerModal
+        visible={sitePickerOpen}
+        sites={state.sites}
+        selectedSiteId={siteId}
+        onClose={() => setSitePickerOpen(false)}
+        onSelect={setSiteId}
+      />
+      <DateTimePickerSheet
+        visible={Boolean(picker) && Platform.OS !== 'web'}
+        title={pickerTitle}
+        subtitle={pickerSubtitle}
+        mode={picker?.kind === 'occurredTime' ? 'time' : 'date'}
+        value={
+          picker?.kind === 'occurredDate'
+            ? isoToDate(occurredDate)
+            : picker?.kind === 'occurredTime'
+              ? timeToDate(occurredDate, occurredTime)
+              : isoToDate(dueDate ?? occurredDate)
+        }
+        onPicked={applyPicked}
+        onClose={closePicker}
+      />
     </Screen>
   );
 }

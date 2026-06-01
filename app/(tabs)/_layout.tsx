@@ -30,6 +30,12 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="reports/index"
+        options={{
+          title: 'Rapports'
+        }}
+      />
+      <Tabs.Screen
         name="incidents/index"
         options={{
           title: 'Incidents'

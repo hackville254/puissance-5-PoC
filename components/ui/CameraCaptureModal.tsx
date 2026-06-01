@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { Modal, Platform, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Linking, Modal, Platform, Pressable, Text, View } from 'react-native';
 
 export function CameraCaptureModal({
   visible,
@@ -42,17 +42,34 @@ export function CameraCaptureModal({
             <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 16 }}>
               <Text style={{ color: '#FFFFFF', fontWeight: '700', textAlign: 'center' }}>Capture indisponible sur Web.</Text>
             </View>
-          ) : !cameraPermission?.granted ? (
+          ) : !cameraPermission ? (
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 18 }}>
+              <ActivityIndicator color="#FFFFFF" />
+              <Text style={{ marginTop: 12, color: 'rgba(255,255,255,0.85)', fontWeight: '700', textAlign: 'center' }}>
+                Chargement des permissions caméra…
+              </Text>
+            </View>
+          ) : !cameraPermission.granted ? (
             <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 18 }}>
               <Text style={{ color: '#FFFFFF', fontWeight: '700', textAlign: 'center' }}>
                 Autorise la caméra pour prendre des preuves sur site.
               </Text>
               <Pressable
-                onPress={() => requestCameraPermission()}
+                onPress={() => {
+                  if (cameraPermission.canAskAgain) void requestCameraPermission();
+                  else void Linking.openSettings();
+                }}
                 style={{ marginTop: 16, height: 48, paddingHorizontal: 16, borderRadius: 16, backgroundColor: '#25D366', alignItems: 'center', justifyContent: 'center' }}
               >
-                <Text style={{ color: '#0B141A', fontWeight: '900' }}>Autoriser la caméra</Text>
+                <Text style={{ color: '#0B141A', fontWeight: '900' }}>
+                  {cameraPermission.canAskAgain ? 'Autoriser la caméra' : 'Ouvrir les réglages'}
+                </Text>
               </Pressable>
+              {!cameraPermission.canAskAgain ? (
+                <Text style={{ marginTop: 10, color: 'rgba(255,255,255,0.75)', fontWeight: '600', textAlign: 'center' }}>
+                  L’autorisation a été refusée. Active la caméra dans les réglages de l’app.
+                </Text>
+              ) : null}
             </View>
           ) : (
             <CameraView

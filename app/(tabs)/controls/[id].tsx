@@ -473,9 +473,14 @@ export default function ControlDetailScreen() {
               }}
               disabled={!canComplete}
             />
-            <Pressable onPress={() => router.push(routes.reports)} className="mt-3 h-12 items-center justify-center rounded-2xl border border-slate-200 bg-white active:opacity-90">
-              <Text className="text-[15px] font-semibold text-slate-900">Voir les rapports</Text>
-            </Pressable>
+            {canAccessPathname(state.role, routes.reports) ? (
+              <Pressable
+                onPress={() => router.push(routes.reports)}
+                className="mt-3 h-12 items-center justify-center rounded-2xl border border-slate-200 bg-white active:opacity-90"
+              >
+                <Text className="text-[15px] font-semibold text-slate-900">Voir les rapports</Text>
+              </Pressable>
+            ) : null}
           </View>
 
           <CameraCaptureModal

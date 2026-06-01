@@ -9,7 +9,6 @@ import { Card } from '../../components/ui/Card';
 import { FormField, TextField } from '../../components/ui/FormControls';
 import { Icon } from '../../components/ui/Icon';
 import { Screen } from '../../components/ui/Screen';
-import { SectionHeader } from '../../components/ui/SectionHeader';
 import type { Site } from '../../lib/models';
 import { useAppStore } from '../../lib/store';
 
@@ -36,6 +35,8 @@ export default function NewSiteScreen() {
   const [lat, setLat] = useState('48.8566');
   const [lng, setLng] = useState('2.3522');
   const [radius, setRadius] = useState('120');
+  const [showTags, setShowTags] = useState(true);
+  const [showGeofence, setShowGeofence] = useState(false);
 
   const canSave = useMemo(() => name.trim().length >= 2 && address.trim().length >= 4, [name, address]);
   const hasDraftChanges = useMemo(
@@ -89,149 +90,159 @@ export default function NewSiteScreen() {
   };
 
   return (
-    <Screen>
+    <Screen
+      footer={
+        <View className="gap-3">
+          <Button label="Créer" disabled={!canSave} onPress={save} />
+          <Button label="Annuler" variant="secondary" onPress={confirmClose} />
+        </View>
+      }
+    >
       <AppBar title="Nouveau site" subtitle="Créer un site" left={{ icon: 'chevron-left', label: 'Retour', onPress: confirmClose }} />
 
-      <SectionHeader title="Informations" />
       <Card>
-        <FormField label="Nom">
-          <TextField accessibilityLabel="Nom du site" value={name} onChangeText={setName} autoCapitalize="words" />
+        <FormField label="Nom du site" icon="building">
+          <TextField leftIcon="building" accessibilityLabel="Nom du site" value={name} onChangeText={setName} autoCapitalize="words" />
         </FormField>
 
-        <FormField label="Adresse" className="mt-4">
-          <TextField accessibilityLabel="Adresse du site" value={address} onChangeText={setAddress} autoCapitalize="words" />
+        <FormField label="Adresse" icon="building" className="mt-4">
+          <TextField leftIcon="building" accessibilityLabel="Adresse du site" value={address} onChangeText={setAddress} autoCapitalize="words" />
         </FormField>
 
-        <FormField label="Ville" className="mt-4">
-          <TextField accessibilityLabel="Ville du site" value={city} onChangeText={setCity} autoCapitalize="words" />
-        </FormField>
-
-        <FormField label="Tags" hint="Utilise des tags pour typer le site ou ses zones." className="mt-4">
-        <View className="mt-2 flex-row flex-wrap gap-2">
-          {tags.length === 0 ? (
-            <Text className="text-[13px] text-slate-500 dark:text-slate-300">Ajoute des tags (type de site, zone, etc.).</Text>
-          ) : (
-            tags.map(t => (
-              <Pressable
-                key={t}
-                accessibilityRole="button"
-                accessibilityLabel={`Retirer le tag ${t}`}
-                onPress={() => removeTag(t)}
-                className="flex-row items-center rounded-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-2 active:opacity-90"
-              >
-                <Text className="text-[12px] font-semibold text-slate-700 dark:text-slate-200">{t}</Text>
-                <View className="w-1.5" />
-                <Icon name="x" size={14} color={isDark ? 'rgba(255,255,255,0.75)' : '#64748B'} />
-              </Pressable>
-            ))
-          )}
-        </View>
-        <View className="mt-3 flex-row items-center gap-2">
-          <View className="flex-1">
-            <TextField
-              value={tagInput}
-              onChangeText={setTagInput}
-              onSubmitEditing={() => addTag(tagInput)}
-              returnKeyType="done"
-              placeholder="Ex: Sanitaires, Hall, Open space"
-              autoCapitalize="words"
-              autoCorrect={false}
-              inputClassName="text-[14px]"
-            />
-          </View>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Ajouter un tag"
-            onPress={() => addTag(tagInput)}
-            className="h-12 w-12 items-center justify-center rounded-2xl bg-brand-600 active:opacity-90"
-          >
-            <Icon name="plus" size={18} color="#FFFFFF" />
-          </Pressable>
-        </View>
-        <View className="mt-3 flex-row flex-wrap gap-2">
-          {['Bureaux', 'Immeuble', 'École', 'Sanitaires', 'Open space', 'Halls'].map(s => (
-            <Pressable
-              key={s}
-              onPress={() => addTag(s)}
-              className="rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-3 py-2 active:opacity-90"
-            >
-              <Text className="text-[12px] font-semibold text-slate-700 dark:text-slate-200">{s}</Text>
-            </Pressable>
-          ))}
-        </View>
+        <FormField label="Ville" icon="building" className="mt-4">
+          <TextField leftIcon="building" accessibilityLabel="Ville du site" value={city} onChangeText={setCity} autoCapitalize="words" />
         </FormField>
       </Card>
 
-      <SectionHeader title="Géofence" />
-      <Card>
-        <View className="flex-row gap-3">
-          <View className="flex-1">
-            <FormField label="Latitude">
-              <TextField value={lat} onChangeText={setLat} keyboardType="numbers-and-punctuation" autoCapitalize="none" autoCorrect={false} />
-            </FormField>
-          </View>
-          <View className="flex-1">
-            <FormField label="Longitude">
-              <TextField value={lng} onChangeText={setLng} keyboardType="numbers-and-punctuation" autoCapitalize="none" autoCorrect={false} />
-            </FormField>
-          </View>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Afficher ou masquer les tags"
+        onPress={() => setShowTags(v => !v)}
+        className="mt-6 flex-row items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-4 active:opacity-90 dark:border-slate-700 dark:bg-slate-900"
+      >
+        <View className="flex-row items-center">
+          <Icon name="list" size={18} color={isDark ? '#FFFFFF' : '#0F172A'} />
+          <Text className="ml-3 text-[14px] font-semibold text-slate-900 dark:text-white">Tags (optionnel)</Text>
         </View>
-        <FormField label="Rayon" hint="Distance en metres autour du site." className="mt-4">
-        <View className="mt-2 flex-row items-center gap-2">
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Diminuer le rayon"
-            onPress={() => bumpRadius(-10)}
-            className="h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800 active:opacity-80"
-          >
-            <Icon name="minus" size={18} color={isDark ? '#FFFFFF' : '#0F172A'} />
-          </Pressable>
-          <View className="flex-1">
-            <TextField value={radius} onChangeText={setRadius} keyboardType="number-pad" autoCapitalize="none" autoCorrect={false} />
-          </View>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Augmenter le rayon"
-            onPress={() => bumpRadius(10)}
-            className="h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800 active:opacity-80"
-          >
-            <Icon name="plus" size={18} color={isDark ? '#FFFFFF' : '#0F172A'} />
-          </Pressable>
-        </View>
-        <View className="mt-3 flex-row gap-2">
-          {[50, 120, 250].map(v => (
-            <Pressable
-              key={v}
-              onPress={() => setRadius(String(v))}
-              className="flex-1 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-3 py-3 active:opacity-90"
-            >
-              <Text className="text-center text-[12px] font-semibold text-slate-700 dark:text-slate-200">{v} m</Text>
-            </Pressable>
-          ))}
-        </View>
-        </FormField>
-      </Card>
+        <Icon name={showTags ? 'chevron-up' : 'chevron-down'} size={18} color={isDark ? '#FFFFFF' : '#0F172A'} />
+      </Pressable>
 
-      <SectionHeader title="Aperçu" />
-      <Card>
-        <Text className="text-[15px] font-semibold text-slate-900 dark:text-white">{name.trim() || 'Site'}</Text>
-        <Text className="mt-1 text-[13px] text-slate-500 dark:text-slate-300">{`${address.trim() || 'Adresse'} • ${city.trim() || 'Ville'}`}</Text>
-        <View className="mt-3 flex-row flex-wrap gap-2">
-          {tags.slice(0, 5).map(t => (
-            <View key={t} className="rounded-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-2">
-              <Text className="text-[12px] font-semibold text-slate-700 dark:text-slate-200">{t}</Text>
+      {showTags ? (
+        <Card className="mt-3">
+          <FormField label="Tags" icon="list" hint="Type de site, zones, etc.">
+            <View className="mt-2 flex-row flex-wrap gap-2">
+              {tags.length === 0 ? (
+                <Text className="text-[13px] text-slate-500 dark:text-slate-300">Aucun tag.</Text>
+              ) : (
+                tags.map(t => (
+                  <Pressable
+                    key={t}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Retirer le tag ${t}`}
+                    onPress={() => removeTag(t)}
+                    className="flex-row items-center rounded-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-2 active:opacity-90"
+                  >
+                    <Text className="text-[12px] font-semibold text-slate-700 dark:text-slate-200">{t}</Text>
+                    <View className="w-1.5" />
+                    <Icon name="x" size={14} color={isDark ? 'rgba(255,255,255,0.75)' : '#64748B'} />
+                  </Pressable>
+                ))
+              )}
             </View>
-          ))}
-          <View className="rounded-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-2">
-            <Text className="text-[12px] font-semibold text-slate-700 dark:text-slate-200">{`Géofence: ${radius} m`}</Text>
+            <View className="mt-3 flex-row items-center gap-2">
+              <View className="flex-1">
+                <TextField
+                  leftIcon="list"
+                  value={tagInput}
+                  onChangeText={setTagInput}
+                  onSubmitEditing={() => addTag(tagInput)}
+                  returnKeyType="done"
+                  placeholder="Ex: Sanitaires"
+                  autoCapitalize="words"
+                  autoCorrect={false}
+                  inputClassName="text-[14px]"
+                />
+              </View>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Ajouter un tag"
+                onPress={() => addTag(tagInput)}
+                className="h-12 w-12 items-center justify-center rounded-2xl bg-brand-600 active:opacity-90"
+              >
+                <Icon name="plus" size={18} color="#FFFFFF" />
+              </Pressable>
+            </View>
+          </FormField>
+        </Card>
+      ) : null}
+
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Afficher ou masquer la géofence"
+        onPress={() => setShowGeofence(v => !v)}
+        className="mt-4 flex-row items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-4 active:opacity-90 dark:border-slate-700 dark:bg-slate-900"
+      >
+        <View className="flex-row items-center">
+          <Icon name="circle" size={18} color={isDark ? '#FFFFFF' : '#0F172A'} />
+          <View className="ml-3">
+            <Text className="text-[14px] font-semibold text-slate-900 dark:text-white">Géofence (optionnel)</Text>
+            <Text className="mt-0.5 text-[12px] text-slate-500 dark:text-slate-300">{radius} m</Text>
           </View>
         </View>
-      </Card>
+        <Icon name={showGeofence ? 'chevron-up' : 'chevron-down'} size={18} color={isDark ? '#FFFFFF' : '#0F172A'} />
+      </Pressable>
 
-      <View className="mt-6 gap-3">
-        <Button label="Créer" disabled={!canSave} onPress={save} />
-        <Button label="Annuler" variant="secondary" onPress={confirmClose} />
-      </View>
+      {showGeofence ? (
+        <Card className="mt-3">
+          <View className="flex-row gap-3">
+            <View className="flex-1">
+              <FormField label="Latitude" icon="circle">
+                <TextField leftIcon="circle" value={lat} onChangeText={setLat} keyboardType="numbers-and-punctuation" autoCapitalize="none" autoCorrect={false} />
+              </FormField>
+            </View>
+            <View className="flex-1">
+              <FormField label="Longitude" icon="circle">
+                <TextField leftIcon="circle" value={lng} onChangeText={setLng} keyboardType="numbers-and-punctuation" autoCapitalize="none" autoCorrect={false} />
+              </FormField>
+            </View>
+          </View>
+          <FormField label="Rayon" icon="circle" hint="Distance en metres autour du site." className="mt-4">
+            <View className="mt-2 flex-row items-center gap-2">
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Diminuer le rayon"
+                onPress={() => bumpRadius(-10)}
+                className="h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800 active:opacity-80"
+              >
+                <Icon name="minus" size={18} color={isDark ? '#FFFFFF' : '#0F172A'} />
+              </Pressable>
+              <View className="flex-1">
+                <TextField leftIcon="circle" value={radius} onChangeText={setRadius} keyboardType="number-pad" autoCapitalize="none" autoCorrect={false} />
+              </View>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Augmenter le rayon"
+                onPress={() => bumpRadius(10)}
+                className="h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800 active:opacity-80"
+              >
+                <Icon name="plus" size={18} color={isDark ? '#FFFFFF' : '#0F172A'} />
+              </Pressable>
+            </View>
+            <View className="mt-3 flex-row gap-2">
+              {[50, 120, 250].map(v => (
+                <Pressable
+                  key={v}
+                  onPress={() => setRadius(String(v))}
+                  className="flex-1 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-3 py-3 active:opacity-90"
+                >
+                  <Text className="text-center text-[12px] font-semibold text-slate-700 dark:text-slate-200">{v} m</Text>
+                </Pressable>
+              ))}
+            </View>
+          </FormField>
+        </Card>
+      ) : null}
+
     </Screen>
   );
 }

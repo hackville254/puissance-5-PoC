@@ -220,6 +220,7 @@ export function canAccessPathname(role: Role, pathname: string): boolean {
   const key = routeKeyForPathname(pathname);
   switch (key) {
     case 'home':
+      return role !== 'client';
     case 'profile':
       return true;
     case 'controls:list':
@@ -235,7 +236,7 @@ export function canAccessPathname(role: Role, pathname: string): boolean {
     case 'planning':
       return role === 'agent' || role === 'controller' || role === 'ops';
     case 'sites':
-      return role === 'controller' || role === 'ops';
+      return canPerform(role, 'manage_sites');
     case 'templates':
       return role === 'controller' || role === 'ops';
     case 'reports':

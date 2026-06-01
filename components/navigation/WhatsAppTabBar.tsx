@@ -111,6 +111,7 @@ export function WhatsAppTabBar(props: TabBarProps) {
       { name: 'index', label: 'Accueil', icon: 'house' as const },
       { name: 'controls', label: 'Contrôles', icon: 'clipboard-check' as const },
       { name: 'incidents', label: 'Incidents', icon: 'circle-alert' as const },
+      { name: 'reports', label: 'Rapports', icon: 'file-text' as const },
       { name: 'profile', label: 'Profil', icon: 'user' as const }
     ],
     []
@@ -123,6 +124,8 @@ export function WhatsAppTabBar(props: TabBarProps) {
         return routes.controls;
       case 'incidents':
         return routes.incidents;
+      case 'reports':
+        return routes.reports;
       case 'profile':
         return routes.profile;
       default:

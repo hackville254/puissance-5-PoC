@@ -1,4 +1,3 @@
-import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { Platform } from 'react-native';
 
 let configured = false;
@@ -9,12 +8,8 @@ export type NotificationScheduleResult = 'scheduled' | 'skipped' | 'denied' | 'u
 
 type NotificationsModule = typeof import('expo-notifications');
 
-function isExpoGo() {
-  return Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
-}
-
 function getNotificationsModule(): NotificationsModule | null {
-  if (Platform.OS === 'web' || isExpoGo()) return null;
+  if (Platform.OS === 'web') return null;
   try {
     return require('expo-notifications') as NotificationsModule;
   } catch {

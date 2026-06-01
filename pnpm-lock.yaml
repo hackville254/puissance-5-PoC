@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  expo-font: 55.0.8
+
 importers:
 
   .:
@@ -30,7 +33,7 @@ importers:
         specifier: ~55.0.22
         version: 55.0.22(expo@55.0.26)(react-native@0.83.6(@babel/core@7.29.0)(@types/react@19.2.15)(react@19.2.0))
       expo-font:
-        specifier: ~55.0.8
+        specifier: 55.0.8
         version: 55.0.8(expo@55.0.26)(react-native@0.83.6(@babel/core@7.29.0)(@types/react@19.2.15)(react@19.2.0))(react@19.2.0)
       expo-haptics:
         specifier: ~55.0.14
@@ -826,7 +829,7 @@ packages:
       '@expo/metro-runtime': ^55.0.11
       expo: '*'
       expo-constants: ^55.0.16
-      expo-font: ^55.0.8
+      expo-font: 55.0.8
       expo-router: '*'
       expo-server: ^55.0.11
       react: '*'
@@ -858,7 +861,7 @@ packages:
   '@expo/vector-icons@15.1.1':
     resolution: {integrity: sha512-Iu2VkcoI5vygbtYngm7jb4ifxElNVXQYdDrYkT7UCEIiKLeWnQY0wf2ZhHZ+Wro6Sc5TaumpKUOqDRpLi5rkvw==}
     peerDependencies:
-      expo-font: '>=14.0.4'
+      expo-font: 55.0.8
       react: '*'
       react-native: '*'
 
@@ -2510,7 +2513,7 @@ packages:
     resolution: {integrity: sha512-F85C/8ExQjd2gYjasLVKMT8wPj+1+19TVTqg4jAeVjVZklqiQtLO72io9Ji1xAjYNgmDeUI0diVHlFMMTC4Ekg==}
     peerDependencies:
       expo: '*'
-      expo-font: '*'
+      expo-font: 55.0.8
       react: '*'
       react-native: '*'
 

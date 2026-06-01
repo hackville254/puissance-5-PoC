@@ -8,18 +8,23 @@ import { Icon, type IconName } from './Icon';
 
 export function FormField({
   label,
+  icon,
   hint,
   children,
   className
 }: {
   label: string;
+  icon?: IconName;
   hint?: string;
   children: React.ReactNode;
   className?: string;
 }) {
   return (
     <View className={cn(className)}>
-      <Text className="text-[12px] font-semibold text-slate-600 dark:text-slate-300">{label}</Text>
+      <View className="flex-row items-center">
+        {icon ? <Icon name={icon} size={14} color="#64748B" /> : null}
+        <Text className={cn('text-[12px] font-semibold text-slate-600 dark:text-slate-300', icon && 'ml-2')}>{label}</Text>
+      </View>
       {hint ? <Text className="mt-1 text-[12px] leading-5 text-slate-500 dark:text-slate-400">{hint}</Text> : null}
       {children}
     </View>
@@ -27,12 +32,14 @@ export function FormField({
 }
 
 export function TextField({
+  leftIcon,
   right,
   multiline,
   containerClassName,
   inputClassName,
   ...props
 }: TextInputProps & {
+  leftIcon?: IconName;
   right?: React.ReactNode;
   containerClassName?: string;
   inputClassName?: string;
@@ -48,12 +55,14 @@ export function TextField({
         containerClassName
       )}
     >
+      {leftIcon ? <Icon name={leftIcon} size={18} color={isDark ? 'rgba(255,255,255,0.8)' : '#64748B'} /> : null}
       <TextInput
         {...props}
         multiline={multiline}
         placeholderTextColor={props.placeholderTextColor ?? (isDark ? 'rgba(255,255,255,0.45)' : '#94A3B8')}
         className={cn(
-          'flex-1 text-[15px] text-slate-900 dark:text-white',
+          'flex-1 min-w-0 text-[15px] text-slate-900 dark:text-white',
+          leftIcon && 'ml-3',
           multiline && 'min-h-[96px] py-0',
           inputClassName
         )}
@@ -92,7 +101,7 @@ export function SearchField({
         autoCapitalize="none"
         placeholder={placeholder}
         placeholderTextColor={isDark ? 'rgba(255,255,255,0.45)' : '#94A3B8'}
-        className="ml-3 flex-1 text-[14px] text-slate-900 dark:text-white"
+        className="ml-3 flex-1 min-w-0 text-[14px] text-slate-900 dark:text-white"
       />
       {value.trim().length > 0 && onClear ? (
         <Pressable
@@ -136,15 +145,23 @@ export function ChoiceCard({
       )}
     >
       <View className="flex-row items-start justify-between gap-3">
-        <View className="flex-1">
+        <View className="flex-1 min-w-0">
           <View className="flex-row items-center gap-2">
             {icon}
-            <Text className={selected ? 'text-[13px] font-semibold text-white' : 'text-[13px] font-semibold text-slate-900 dark:text-white'}>
+            <Text
+              numberOfLines={1}
+              ellipsizeMode="tail"
+              className={selected ? 'text-[13px] font-semibold text-white' : 'text-[13px] font-semibold text-slate-900 dark:text-white'}
+            >
               {title}
             </Text>
           </View>
           {description ? (
-            <Text className={selected ? 'mt-1 text-[12px] leading-5 text-white/80' : 'mt-1 text-[12px] leading-5 text-slate-500 dark:text-slate-300'}>
+            <Text
+              numberOfLines={2}
+              ellipsizeMode="tail"
+              className={selected ? 'mt-1 text-[12px] leading-5 text-white/80' : 'mt-1 text-[12px] leading-5 text-slate-500 dark:text-slate-300'}
+            >
               {description}
             </Text>
           ) : null}
@@ -158,11 +175,13 @@ export function ChoiceCard({
 export function PickerField({
   value,
   description,
+  leftIcon,
   icon,
   onPress
 }: {
   value: string;
   description?: string;
+  leftIcon?: IconName;
   icon: IconName;
   onPress: () => void;
 }) {
@@ -175,9 +194,18 @@ export function PickerField({
       onPress={onPress}
       className="mt-2 flex-row items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 dark:border-slate-700 dark:bg-slate-800"
     >
-      <View className="flex-1 pr-3">
-        <Text className="text-[15px] font-semibold text-slate-900 dark:text-white">{value}</Text>
-        {description ? <Text className="mt-1 text-[12px] text-slate-500 dark:text-slate-300">{description}</Text> : null}
+      <View className="flex-1 min-w-0 flex-row items-center pr-3">
+        {leftIcon ? <Icon name={leftIcon} size={18} color={isDark ? 'rgba(255,255,255,0.8)' : '#64748B'} /> : null}
+        <View className={cn('flex-1 min-w-0', leftIcon && 'ml-3')}>
+        <Text numberOfLines={1} ellipsizeMode="tail" className="text-[15px] font-semibold text-slate-900 dark:text-white">
+          {value}
+        </Text>
+        {description ? (
+          <Text numberOfLines={1} ellipsizeMode="tail" className="mt-1 text-[12px] text-slate-500 dark:text-slate-300">
+            {description}
+          </Text>
+        ) : null}
+        </View>
       </View>
       <Icon name={icon} size={20} color={isDark ? '#FFFFFF' : '#111827'} />
     </Pressable>

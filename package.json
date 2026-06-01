@@ -1,7 +1,11 @@
 {
   "name": "puissance5",
   "version": "1.0.0",
+  "packageManager": "pnpm@10.28.2",
   "main": "expo-router/entry",
+  "engines": {
+    "node": ">=20.19.0 <21"
+  },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/datetimepicker": "8.6.0",
@@ -43,13 +47,17 @@
   },
   "scripts": {
     "postinstall": "node scripts/patch-react-native-css-interop.js",
-    "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "web": "expo start --web",
+    "start": "bash scripts/with-node.sh expo start -- --clear",
+    "android": "bash scripts/with-node.sh expo start --android --clear",
+    "ios": "bash scripts/with-node.sh expo start --ios --clear",
+    "web": "bash scripts/with-node.sh expo start --web --clear",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
-    "test": "pnpm run typecheck && pnpm run lint"
+    "test": "bash scripts/with-node.sh pnpm run typecheck && bash scripts/with-node.sh pnpm run lint"
+  },
+  "volta": {
+    "node": "20.19.4",
+    "pnpm": "10.28.2"
   },
   "pnpm": {
     "overrides": {

@@ -1,3 +1,130 @@
+### [2026-05-31T00:15:00Z] | Optimisation UI/UX formulaires (mobile, pas de debordement)
+- **Contexte :** Sur mobile, certains formulaires pouvaient donner une impression de debordement ou de CTA caches (clavier + tab bar), et certains elements (chips/pickers) pouvaient s'etendre au-dela de l'ecran avec de longs libelles.
+- **Modifications effectuees :**
+    - Amelioration globale de `Screen` avec `KeyboardAvoidingView`, gestion du clavier (dismiss + taps) et padding bas plus genereux pour eviter que les boutons de fin de formulaire soient masques par la tab bar.
+    - Durcissement des composants de formulaire (`TextField`, `SearchField`, `ChoiceCard`, `PickerField`) pour eviter les debordements horizontaux (min-w-0 + ellipsis sur pickers).
+    - Securisation de `Chip` pour ne jamais depasser la largeur de l'ecran (maxWidth + ellipsis).
+- **Decisions Techniques :** J'ai applique les correctifs au niveau des primitives UI plutot que de corriger ecran par ecran, afin d'ameliorer tous les formulaires de creation/edition avec une seule evolution et une maintenance minimale.
+- **Impacts & Dependances :** Fichiers touches: `components/ui/Screen.tsx`, `components/ui/FormControls.tsx`, `components/ui/Chip.tsx`.
+- **Prochaines étapes :** Revoir sur un petit device (iPhone SE / Android compact) l'affichage des listes longues (selection site) pour eventuellement introduire une recherche + liste virtualisee si la volumetrie augmente.
+
+### [2026-05-31T00:20:00Z] | Iconographie des formulaires de creation (moins de texte, plus de repères visuels)
+- **Contexte :** Les formulaires de creation etaient lisibles mais encore tres textuels. Sur mobile, ajouter des icones aide a scanner rapidement (site, date, assignation, etc.) et reduit la charge cognitive.
+- **Modifications effectuees :**
+    - Extension de `FormField`, `TextField` et `PickerField` pour supporter des icones (label + icone a gauche / input icon).
+    - Application d'icones sur les ecrans de creation: controle, incident, site, modele.
+- **Decisions Techniques :** J'ai prefere enrichir les primitives de formulaire plutot que de dupliquer de la mise en page avec icones dans chaque ecran, afin de garder une UI consistante et evolutive.
+- **Impacts & Dependances :** Fichiers touches: `components/ui/FormControls.tsx`, `app/(tabs)/controls/new.tsx`, `app/(tabs)/incidents/new.tsx`, `app/sites/new.tsx`, `app/templates/new.tsx`.
+- **Prochaines étapes :** Etendre la meme iconographie aux ecrans d'edition (edit) et aux formulaires web si besoin.
+
+### [2026-05-31T00:25:00Z] | Prevention proactive des crashes (layout + Node/Metro)
+- **Contexte :** Sur petits ecrans, des choix en grille (ex: severite en 3 colonnes) pouvaient provoquer un rendu degrade (mots coupes verticalement). Cote tooling, l'utilisation de Node 24 provoquait un crash Metro.
+- **Modifications effectuees :**
+    - Durcissement de `ChoiceCard` (ellipsis) et passage de la severite en liste verticale pour eviter tout debordement sur mobile.
+    - Ajout d'un guard Node avant le demarrage (`scripts/check-node.js`) et execution via `prestart`/scripts `ios|android|web` pour bloquer la configuration non supportee avant Metro.
+- **Decisions Techniques :** J'ai prefere une prevention en amont (fail fast) plutot qu'un troubleshooting a posteriori. Pour l'UI, le layout vertical privilegie la lisibilite et la tappability sur petits ecrans.
+- **Impacts & Dependances :** Fichiers touches: `components/ui/FormControls.tsx`, `app/(tabs)/incidents/new.tsx`, `scripts/check-node.js`, `package.json`.
+- **Prochaines étapes :** Ajouter un check similaire cote CI (si present) et documenter le workflow "dev build" pour les features non supportees par Expo Go.
+
+### [2026-05-31T00:35:00Z] | Simplification ergonomique des formulaires de creation
+- **Contexte :** Les formulaires de creation etaient riches mais trop longs et "bruyants" sur mobile (liste de sites inline, apercus redondants, actions trop denses sur les criteres).
+- **Modifications effectuees :**
+    - Remplacement des listes de sites inline par un picker + modal de selection reutilisable (`SitePickerModal`) sur creation controle/incident.
+    - Suppression des sections d'aperçu redondantes sur creation controle/incident et simplification du flux (champs essentiels en premier).
+    - Simplification de creation site avec options avancees pliables (tags, geofence) pour reduire la longueur par defaut.
+    - Simplification de creation modele: liste de criteres tappables + actions dans une bottom sheet (monter/descendre, critique, suppression).
+- **Decisions Techniques :** J'ai applique une approche "progressive disclosure" et des interactions mobiles standard (picker/modal, sheet d'actions) pour reduire la charge cognitive et augmenter la vitesse de saisie.
+- **Impacts & Dependances :** Fichiers touches: `components/ui/SitePickerModal.tsx`, `app/(tabs)/controls/new.tsx`, `app/(tabs)/incidents/new.tsx`, `app/sites/new.tsx`, `app/templates/new.tsx`.
+- **Prochaines étapes :** Appliquer la meme simplification aux ecrans d'edition (edit) et homogeniser les modales de pickers (date/heure) si besoin.
+
+### [2026-06-01T12:45:00Z] | Harmonisation des pickers (date/heure) + ergonomie edition
+- **Contexte :** Les pickers date/heure etaient dupliques ecran par ecran (create/edit) et la selection de site dans l'edition du controle etait encore "inline" (liste longue).
+- **Modifications effectuees :**
+    - Ajout d'un composant reutilisable de picker en bottom sheet (`DateTimePickerSheet`) et remplacement des implementations dupliquees (create/edit controls/incidents).
+    - Simplification de l'edition controle: selection de site via modal (meme pattern que creation), suppression d'un apercu redondant, CTA dans le footer.
+    - Durcissement UX de l'edition incident: severite/statut en liste verticale et ajout d'iconographie sur les champs.
+- **Decisions Techniques :** Centraliser les interactions "date/time" limite les regressions UI et garantit une experience consistente sur iOS/Android. Le passage en listes verticales privilegie la lisibilite et des tap targets fiables sur petit ecran.
+- **Impacts & Dependances :** Fichiers touches: `components/ui/DateTimePickerSheet.tsx`, `app/(tabs)/controls/new.tsx`, `app/(tabs)/incidents/new.tsx`, `app/(tabs)/controls/edit/[id].tsx`, `app/(tabs)/incidents/edit/[id].tsx`.
+- **Prochaines étapes :** Reutiliser `DateTimePickerSheet` sur d'autres ecrans si des pickers apparaissent (filtres, planning avance).
+
+### [2026-06-01T13:00:00Z] | Segmented controls + sections pliables (create/edit) + engine strict
+- **Contexte :** Sur mobile, les choix (type/statut/severite) prenaient trop de place et pouvaient se casser sur petits ecrans. Certains champs optionnels (echeance) encombraient le flux principal. Cote dev, Node non supporte pouvait generer des erreurs Metro difficiles a diagnostiquer.
+- **Modifications effectuees :**
+    - Ajout de `SegmentedControl` et remplacement des blocs de cartes (type/statut/severite) par des controles compacts et robustes (create/edit).
+    - Ajout de `DisclosureSection` et passage des champs optionnels (echeance) en sections pliables (progressive disclosure).
+    - Maintien d'un guard Node "fail-fast" avant demarrage (via `prestart`) pour eviter les crashes Metro, sans bloquer les workflows de lint/typecheck.
+- **Decisions Techniques :** Les segmented controls reduisent la longueur des formulaires tout en gardant des tap targets fiables. Les sections pliables diminuent la charge cognitive en gardant le "happy path" court. Le fail-fast sur Node evite des crashes Metro tardifs.
+- **Impacts & Dependances :** Fichiers touches: `components/ui/SegmentedControl.tsx`, `components/ui/DisclosureSection.tsx`, `app/(tabs)/controls/new.tsx`, `app/(tabs)/incidents/new.tsx`, `app/templates/new.tsx`, `app/(tabs)/controls/edit/[id].tsx`, `app/(tabs)/incidents/edit/[id].tsx`.
+- **Prochaines étapes :** Uniformiser l'usage des segmented controls sur les ecrans restants (si de nouveaux workflows ajoutent des choix similaires).
+
+### [2026-06-01T13:10:00Z] | Demarrage plus robuste (pin Node multi-outils)
+- **Contexte :** `pnpm start` etait bloque correctement sur Node non supporte, mais le message n'etait pas assez actionnable. Objectif: eviter du temps perdu et faciliter le bon setup.
+- **Modifications effectuees :**
+    - Amelioration du guard Node: detection de la version pinnee (`.nvmrc`/`.node-version`) et instructions nvm/fnm/volta.
+    - Ajout d'un pin optionnel Volta (`package.json`) + `.tool-versions` (asdf) pour un auto-switch plus fluide selon l'outillage du dev.
+- **Decisions Techniques :** On garde le fail-fast (evite les crashes Metro tardifs) tout en rendant la remediation immediate. Volta/asdf n'introduisent pas de dependance runtime: ce sont des hints de setup.
+- **Impacts & Dependances :** Fichiers touches: `scripts/check-node.js`, `package.json`, `.tool-versions`.
+- **Prochaines étapes :** Envisager une doc courte "setup dev" si l'equipe change souvent de machine (sinon les pins suffisent).
+
+### [2026-06-01T13:15:00Z] | `pnpm start` auto-switch (fnm) et scripts coherents
+- **Contexte :** `pnpm start` etait robuste mais exigeait une action manuelle (switch Node) avant de lancer Expo. Objectif: rendre le workflow "just works" des qu'un gestionnaire (fnm) est installe.
+- **Modifications effectuees :**
+    - Ajout de `scripts/with-node.sh` qui tente un auto-switch vers la version pinnee via `fnm` (si present), puis execute la commande demandee.
+    - Branchement de `start/ios/android/web/test` sur `scripts/with-node.sh` pour eviter les differences de runtime Node entre commandes.
+- **Decisions Techniques :** On garde le fail-fast (pas d'execution Metro sur Node non supporte), mais on reduit la friction en automatisant le switch lorsque c'est possible.
+- **Impacts & Dependances :** Fichiers touches: `scripts/with-node.sh`, `package.json`.
+- **Prochaines étapes :** Optionnel: ajouter une note courte "setup dev" dans un README si l'equipe n'utilise pas tous `fnm/volta/asdf`.
+
+### [2026-05-31T00:05:00Z] | Popup d onboarding role a la connexion
+- **Contexte :** La separation par role etait en place, mais l'utilisateur n'avait pas d'explication claire au moment de la connexion sur ce que son role lui permet de faire et quelles sections sont disponibles.
+- **Modifications effectuees :**
+    - Ajout d'une popup modale apres `sign-in` qui explique le role, ses responsabilites et les limitations principales.
+    - Boutons pour fermer ou acceder directement a la route par defaut du role.
+- **Decisions Techniques :** J'ai declenche l'onboarding au niveau root sur changement de token de session (1 fois par connexion) afin qu'il fonctionne quel que soit l'ecran de demarrage (ex: Client -> Rapports) et sans persister d'etat supplementaire dans le store.
+- **Impacts & Dependances :** Fichier touche: `app/_layout.tsx`. Aucun impact sur les regles d'acces, uniquement une couche UX.
+- **Prochaines étapes :** Ajouter une preference "ne plus afficher" par utilisateur/role si on souhaite reduire la friction sur les connexions frequentes.
+
+### [2026-05-31T00:10:00Z] | Robustesse camera + notifications (features utilisables)
+- **Contexte :** Certaines fonctionnalites pouvaient paraitre "cassees" selon le contexte (permissions camera bloquees, ou notifications desactivees dans Expo Go).
+- **Modifications effectuees :**
+    - Amelioration de l'ecran permission camera: gestion de l'etat "permissions en chargement" et du cas "refus definitif" avec redirection vers les reglages.
+    - Masquage du CTA "Voir les rapports" dans le detail controle si le role n'a pas acces aux rapports (evite une navigation qui redirige).
+    - Activation des notifications locales egalement dans Expo Go (fallback reste desactive sur Web).
+- **Decisions Techniques :** J'ai privilegie une UX defensive (guidage vers reglages) et la coherance RBAC (ne pas afficher d'actions inaccessibles) pour garantir que les fonctionnalites presentes fonctionnent ou degradent proprement.
+- **Impacts & Dependances :** Fichiers touches: `components/ui/CameraCaptureModal.tsx`, `app/(tabs)/controls/[id].tsx`, `lib/notifications.ts`.
+- **Prochaines étapes :** Tester sur device physique iOS/Android (camera + QR + notifications) car les emulateurs et le Web ne representent pas ces capteurs.
+
+### [2026-05-31T00:00:00Z] | Separation claire des interfaces par role (RBAC navigation)
+- **Contexte :** La navigation ne separait pas assez clairement les interfaces par role: le role Client pouvait encore atteindre l'accueil, et l'acces aux ecrans `Sites` n'etait pas aligne avec les capacites (risque d'ecrans visibles sans droits effectifs).
+- **Modifications effectuees :**
+    - Migration de l'ecran `Rapports` dans le groupe `(tabs)` afin d'en faire une destination native de l'interface (et plus un modal root).
+    - Ajout de l'onglet `Rapports` dans la tab bar, avec filtrage automatique selon `canAccessPathname`.
+    - Durcissement de `canAccessPathname` : blocage explicite de `home` pour le role `client` et alignement de `sites` sur `manage_sites` (ops uniquement).
+    - Correction de l'entree "Administration" du profil pour pointer vers `Sites` (ops) ou `Listes de controle` (controller) selon les droits.
+- **Decisions Techniques :** J'ai choisi de rendre les limites de navigation coherentes avec les capacites (`canPerform`) et de structurer `Rapports` comme un ecran de premier niveau, afin que chaque role voie une interface restreinte et logique sans dependance a un "modal" generique.
+- **Impacts & Dependances :** Fichiers touches: `lib/models.ts`, `app/_layout.tsx`, `app/(tabs)/_layout.tsx`, `app/(tabs)/reports/index.tsx`, `app/(tabs)/profile.tsx`, `components/navigation/WhatsAppTabBar.tsx`. Effet de bord volontaire: le role `client` ne peut plus naviguer vers `/` (Accueil) et est oriente vers `/reports`.
+- **Prochaines étapes :** Si besoin, decliner des ecrans d'accueil differencies par role (ex: "Espace client") et supprimer les actions redondantes (ex: raccourci `Rapports` dans le menu +) quand l'onglet est deja visible.
+
+### [2026-05-30T22:57:13Z] | Stabilisation EAS Android Play Store
+- **Contexte :** Le build Android EAS pour publication Play Store echouait tres tot pendant `Install dependencies`, ce qui bloquait toute generation de binaire `.aab` malgre un projet qui passait localement.
+- **Modifications effectuees :**
+    - Identification de la cause exacte via les logs EAS: `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH` sur la configuration `overrides`.
+    - Ajout de `packageManager: pnpm@10.28.2` dans `package.json` pour aligner le projet avec la version `pnpm` de l'image EAS SDK 55.
+    - Durcissement de `eas.json` avec `node: 20.19.4` et `android.image: sdk-55` sur le profil `production` pour obtenir un environnement de build deterministe.
+- **Decisions Techniques :** J'ai prefere figer explicitement l'environnement Node/pnpm plutot que de contourner `--frozen-lockfile`. Cette approche conserve les garanties d'integrite du lockfile, evite les derives entre local et cloud et reduit le risque de regressions non reproductibles.
+- **Impacts & Dependances :** Fichiers touches: `package.json`, `eas.json`. Le lockfile doit etre regenere avec la configuration actuelle avant de relancer EAS Build. Aucun secret n'est ajoute au depot et la chaine de signature Android reste geree par Expo.
+- **Prochaines étapes :** Resynchroniser `pnpm-lock.yaml`, verifier localement `pnpm install --frozen-lockfile`, puis relancer un build EAS Android `production` jusqu'a obtention d'un `.aab` publiable.
+
+### [2026-05-26T16:18:46Z] | Generation de mocks jusqu a fin juin
+- **Contexte :** Les mocks de planning etaient limites a trois controles autour de la date courante, ce qui faisait vite paraitre l'application vide et obsolete. Tu as demande une base de mocks qui reste alimentee jusqu'en juin.
+- **Modifications effectuees :**
+    - Remplacement des mocks statiques dans `lib/mocks.ts` par une generation dynamique de controles du jour courant jusqu'au 30 juin.
+    - Ajout d'une logique de fin de periode qui cible juin de l'annee courante, ou juin de l'annee suivante si l'on est deja apres juin.
+    - Generation d'incidents de demonstration repartis sur la meme periode avec severites, statuts et echeances variees.
+- **Decisions Techniques :** J'ai choisi une generation algorithmique plutot qu'une longue liste manuelle. Cela garde l'application alimentee sans entretien fichier par fichier, reduit la dette et permet de conserver des donnees credibles sur plusieurs semaines.
+- **Impacts & Dependances :** Fichier touche: `lib/mocks.ts`. Les ecrans `Accueil`, `Controles`, `Planning` et `Incidents` affichent maintenant une volumetrie plus realiste jusqu'a fin juin.
+- **Prochaines étapes :** Si tu veux aller plus loin, on peut aussi generer quelques inspections terminees et rapports deja clotures pour enrichir davantage la demo produit.
+
 ### [2026-05-26T08:08:31Z] | Rendre les preuves photo visibles et exploitables
 - **Contexte :** Le projet affichait une promesse produit autour des photos et de la camera, mais le parcours etait incomplet: la capture etait peu visible dans les controles, et les incidents n'avaient aucun flux photo exploitable alors qu'un bloc de placeholder etait encore present.
 - **Modifications effectuees :**

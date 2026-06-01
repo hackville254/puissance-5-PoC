@@ -1,14 +1,15 @@
 import { useRouter } from 'expo-router';
 import { Alert, Platform, Text, View } from 'react-native';
 
-import { AppBar } from '../../components/ui/AppBar';
-import { Button } from '../../components/ui/Button';
-import { Card } from '../../components/ui/Card';
-import { Chip } from '../../components/ui/Chip';
-import { ListScreen } from '../../components/ui/ListScreen';
-import { SectionHeader } from '../../components/ui/SectionHeader';
-import { canPerform } from '../../lib/models';
-import { useAppStore } from '../../lib/store';
+import { AppBar } from '../../../components/ui/AppBar';
+import { Button } from '../../../components/ui/Button';
+import { Card } from '../../../components/ui/Card';
+import { Chip } from '../../../components/ui/Chip';
+import { ListScreen } from '../../../components/ui/ListScreen';
+import { SectionHeader } from '../../../components/ui/SectionHeader';
+import { canAccessPathname, canPerform } from '../../../lib/models';
+import { routes } from '../../../lib/routes';
+import { useAppStore } from '../../../lib/store';
 
 function escapeHtml(value: string) {
   return value
@@ -114,19 +115,21 @@ export default function ReportsScreen() {
     await Sharing.shareAsync(file.uri);
   };
 
+  const showHomeShortcut = canAccessPathname(state.role, routes.home);
+
   return (
     <ListScreen
       data={completed}
       keyExtractor={item => item.id}
       ListHeaderComponent={
         <>
-      <AppBar
-        title="Rapports"
-        subtitle={`Historique • ${completed.length} généré${completed.length > 1 ? 's' : ''} • export PDF`}
-        left={{ icon: 'x', label: 'Fermer', onPress: () => router.back() }}
-      />
+          <AppBar
+            title="Rapports"
+            subtitle={`Historique • ${completed.length} généré${completed.length > 1 ? 's' : ''} • export PDF`}
+            left={showHomeShortcut ? { icon: 'house', label: 'Accueil', onPress: () => router.replace(routes.home) } : undefined}
+          />
 
-      <SectionHeader title="Derniers rapports" />
+          <SectionHeader title="Derniers rapports" />
         </>
       }
       ListEmptyComponent={
