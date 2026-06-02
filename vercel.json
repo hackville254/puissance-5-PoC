@@ -1,13 +1,11 @@
 {
-  "framework": null,
+  "installCommand": "pnpm install",
+  "buildCommand": "pnpm run vercel-build",
   "outputDirectory": "dist",
-  "routes": [
+  "rewrites": [
     {
-      "handle": "filesystem"
-    },
-    {
-      "src": "/.*",
-      "dest": "/"
+      "source": "/(.*)",
+      "destination": "/"
     }
   ]
 }

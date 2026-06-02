@@ -29,7 +29,7 @@
 ### [2026-06-02T16:05:00Z] | Déploiement Vercel (Expo web export + rewrite SPA)
 - **Contexte :** Déployer la version web sur Vercel. Sans rewrite, les deep links (ex: `/sites`, `/incidents/123`) peuvent retourner 404 après refresh.
 - **Modifications effectuees :**
-    - Ajout de `vercel.json` avec un fallback de routing SPA (serve d’abord les fichiers statiques, puis renvoie vers `/`).
+    - Ajout de `vercel.json` avec commandes explicites (`installCommand`, `buildCommand`, `outputDirectory`) + rewrite SPA vers `/` pour éviter les 404 sur refresh.
 - **Decisions Techniques :** `handle: filesystem` garantit que les assets exportés (`/_expo/*`, `*.js`, `*.css`, etc.) restent servis correctement avant le fallback.
 - **Impacts & Dependances :** Fichier touché: `vercel.json`.
 - **Prochaines étapes :** Configurer sur Vercel: Build command `pnpm run vercel-build` et Output directory `dist` (si non détecté).
