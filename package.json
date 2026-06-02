@@ -51,6 +51,13 @@
     "android": "bash scripts/with-node.sh expo start --android --clear",
     "ios": "bash scripts/with-node.sh expo start --ios --clear",
     "web": "bash scripts/with-node.sh expo start --web --clear",
+    "build:web": "bash scripts/with-node.sh expo export -p web",
+    "vercel-build": "pnpm run build:web",
+    "eas": "bash scripts/with-node.sh pnpm dlx eas-cli",
+    "android:doctor": "bash -lc 'set -e; echo \"Android build prerequisites\"; echo \"- Node: $(node -v)\"; echo \"- pnpm: $(pnpm -v)\"; if java -version >/dev/null 2>&1; then echo \"- Java: OK\"; else echo \"- Java: MISSING\"; echo \"  Fix (Homebrew): brew install --cask temurin@17\"; echo \"  Verify: java -version\"; fi; if [[ -n \"${ANDROID_SDK_ROOT:-}\" ]]; then echo \"- ANDROID_SDK_ROOT: ${ANDROID_SDK_ROOT}\"; elif [[ -n \"${ANDROID_HOME:-}\" ]]; then echo \"- ANDROID_HOME: ${ANDROID_HOME}\"; elif [[ -d \"$HOME/Library/Android/sdk\" ]]; then echo \"- Android SDK: found at $HOME/Library/Android/sdk\"; else echo \"- Android SDK: MISSING\"; echo \"  Fix (Homebrew): brew install --cask android-studio\"; echo \"  Then open Android Studio once to install SDK + accept licenses.\"; echo \"  Expected SDK path: $HOME/Library/Android/sdk\"; fi; echo \"\"; echo \"Cloud fallback (may queue on free tier): pnpm run apk:cloud\"; true'",
+    "apk:cloud": "bash scripts/with-node.sh pnpm dlx eas-cli build --platform android --profile preview",
+    "apk:local": "bash -lc 'java -version >/dev/null 2>&1 || { echo \"ERROR: Java (JDK) non install\u00e9. Installe un JDK 17 (Temurin) ou configure JAVA_HOME puis relance. (brew install --cask temurin@17)\"; exit 1; }; if [[ -z \"${ANDROID_HOME:-}\" && -z \"${ANDROID_SDK_ROOT:-}\" && ! -d \"$HOME/Library/Android/sdk\" ]]; then echo \"ERROR: Android SDK introuvable. Installe Android Studio + SDK puis relance. (brew install --cask android-studio)\"; exit 1; fi; bash scripts/with-node.sh env NODE_ENV=production pnpm dlx eas-cli build --platform android --profile preview --local'",
+    "apk": "bash -lc 'pnpm run android:doctor; pnpm run apk:local'",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
     "test": "bash scripts/with-node.sh pnpm run typecheck && bash scripts/with-node.sh pnpm run lint"

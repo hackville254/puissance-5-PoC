@@ -64,8 +64,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "32c55b78-002a-49f5-aa7e-b3449f253fe3"
+        "projectId": "2701bbad-fa9a-4f4b-b713-d4fd13fde648"
       }
-    }
+    },
+    "owner": "hack19"
   }
 }

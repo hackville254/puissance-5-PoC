@@ -1,3 +1,31 @@
+### [2026-06-02T15:20:00Z] | Build APK local “rapide” (EAS local + preflight JDK/SDK + Gradle debug optimized)
+- **Contexte :** Le build APK local via `eas build --local` échouait sur l’environnement (Java/Android SDK manquants) et la commande n’utilisait pas systématiquement le Node supporté. Objectif: rendre l’obtention d’un APK locale plus rapide et plus actionnable.
+- **Modifications effectuees :**
+    - Ajout de scripts `pnpm run eas` et `pnpm run apk` pour standardiser les commandes EAS via le wrapper Node.
+    - Profil `preview` ajusté pour utiliser `android.gradleCommand=:app:assembleDebugOptimized` afin d’accélérer la génération d’un APK installable.
+    - Ajout d’un preflight dans `pnpm run apk` pour échouer tôt avec un message clair si Java (JDK) ou Android SDK ne sont pas installés/configurés.
+- **Decisions Techniques :** `assembleDebugOptimized` fournit un binaire installable plus vite que le release classique, adapté aux itérations terrain PoC. Le preflight évite de “perdre” plusieurs minutes de build avant une erreur de tooling.
+- **Impacts & Dependances :** Fichiers touches: `package.json`, `eas.json`.
+- **Prochaines étapes :** Si besoin, ajouter un script “install” (adb) après build et documenter les prérequis (JDK 17 + Android SDK) dans le runbook interne.
+
+### [2026-06-02T15:35:00Z] | Runbook exécutable pour build Android (android:doctor + scripts cloud/local)
+- **Contexte :** Les erreurs “Java runtime introuvable” / “Android SDK introuvable” doivent être diagnostiquées en quelques secondes, sans relire des logs EAS/Gradle.
+- **Modifications effectuees :**
+    - Ajout de `pnpm run android:doctor` (check Java + Android SDK + commandes de fix).
+    - Ajout de `pnpm run apk:local` et `pnpm run apk:cloud` pour choisir explicitement entre build local (rapide si tooling installé) et build cloud (peut être en queue Free Tier).
+    - `pnpm run apk` affiche maintenant le diagnostic puis lance le build local.
+- **Decisions Techniques :** Séparer cloud/local évite de spammer des builds cloud quand l’objectif est local. Le diagnostic reste lisible et actionnable (commandes directes).
+- **Impacts & Dependances :** Fichier touché: `package.json`.
+- **Prochaines étapes :** Ajouter une vérification optionnelle `adb` si on veut automatiser l’installation sur device après build.
+
+### [2026-06-02T15:45:00Z] | Switch compte Expo/EAS (unlink projectId pour re-lier proprement)
+- **Contexte :** Erreur EAS “Entity not authorized” lors d’un build: le compte connecté n’a pas accès au projet EAS lié via `extra.eas.projectId`.
+- **Modifications effectuees :**
+    - Suppression de `extra.eas.projectId` dans `app.json` pour permettre un re-link propre via `eas project:init` après connexion sur le bon compte.
+- **Decisions Techniques :** Le `projectId` est un lien d’autorisation côté Expo. Tant que l’ID pointe vers un projet non accessible, toute lecture/build échoue. Le retirer permet de recréer/relier le projet sous le compte correct sans ambigüité.
+- **Impacts & Dependances :** Fichier touché: `app.json`.
+- **Prochaines étapes :** Se connecter avec `eas login`, exécuter `eas project:init`, puis relancer `pnpm run apk:cloud` ou `pnpm run apk:local`.
+
 ### [2026-06-02T13:30:00Z] | Preuves checklist (photo+video) + filigrane + PDF complet
 - **Contexte :** Besoin de preuves directement au niveau des criteres de checklist (photo et video) et d'un marquage visible (date + "Puissance 5") sur les captures. Les rapports PDF n'incluaient pas encore les photos.
 - **Modifications effectuees :**
@@ -19,6 +47,13 @@
 - **Decisions Techniques :** Défense en profondeur: règles côté reducer (source of truth) + UX explicite côté écrans. Les transitions sont explicites et stables même si un deep link tente une action invalide.
 - **Impacts & Dependances :** Fichiers touches: `lib/store.tsx`, `app/(tabs)/incidents/[id].tsx`, `app/(tabs)/incidents/edit/[id].tsx`.
 - **Prochaines étapes :** Ajouter éventuellement une règle métier “en cours” obligatoire avant clôture (déjà appliquée via transitions) et un badge “preuve manquante” sur les listes.
+
+### [2026-06-02T14:00:00Z] | Build Android preview en APK (distribution interne)
+- **Contexte :** Besoin d’un moyen très rapide de récupérer un APK installable (sans passer par Play Store).
+- **Modifications effectuees :** Ajout explicite de `android.buildType=apk` sur le profil `preview` dans `eas.json`.
+- **Decisions Techniques :** Forcer le format APK sur le profil “preview” évite les ambiguïtés (AAB vs APK) et facilite l’installation directe sur device/emulator.
+- **Impacts & Dependances :** Fichier touché: `eas.json`.
+- **Prochaines étapes :** Ajouter un profil `preview-local` si on veut standardiser les builds locaux (pré-requis Android SDK).
 
 ### [2026-05-31T00:15:00Z] | Optimisation UI/UX formulaires (mobile, pas de debordement)
 - **Contexte :** Sur mobile, certains formulaires pouvaient donner une impression de debordement ou de CTA caches (clavier + tab bar), et certains elements (chips/pickers) pouvaient s'etendre au-dela de l'ecran avec de longs libelles.
