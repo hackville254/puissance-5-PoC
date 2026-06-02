@@ -26,6 +26,14 @@
 - **Impacts & Dependances :** Fichier touché: `app.json`.
 - **Prochaines étapes :** Se connecter avec `eas login`, exécuter `eas project:init`, puis relancer `pnpm run apk:cloud` ou `pnpm run apk:local`.
 
+### [2026-06-02T16:05:00Z] | Déploiement Vercel (Expo web export + rewrite SPA)
+- **Contexte :** Déployer la version web sur Vercel. Sans rewrite, les deep links (ex: `/sites`, `/incidents/123`) peuvent retourner 404 après refresh.
+- **Modifications effectuees :**
+    - Ajout de `vercel.json` avec un fallback de routing SPA (serve d’abord les fichiers statiques, puis renvoie vers `/`).
+- **Decisions Techniques :** `handle: filesystem` garantit que les assets exportés (`/_expo/*`, `*.js`, `*.css`, etc.) restent servis correctement avant le fallback.
+- **Impacts & Dependances :** Fichier touché: `vercel.json`.
+- **Prochaines étapes :** Configurer sur Vercel: Build command `pnpm run vercel-build` et Output directory `dist` (si non détecté).
+
 ### [2026-06-02T13:30:00Z] | Preuves checklist (photo+video) + filigrane + PDF complet
 - **Contexte :** Besoin de preuves directement au niveau des criteres de checklist (photo et video) et d'un marquage visible (date + "Puissance 5") sur les captures. Les rapports PDF n'incluaient pas encore les photos.
 - **Modifications effectuees :**
