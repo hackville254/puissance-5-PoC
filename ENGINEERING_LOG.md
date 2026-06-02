@@ -1,3 +1,25 @@
+### [2026-06-02T13:30:00Z] | Preuves checklist (photo+video) + filigrane + PDF complet
+- **Contexte :** Besoin de preuves directement au niveau des criteres de checklist (photo et video) et d'un marquage visible (date + "Puissance 5") sur les captures. Les rapports PDF n'incluaient pas encore les photos.
+- **Modifications effectuees :**
+    - Extension du modele Inspection avec `attachments` pour stocker les preuves par critere (photo/video) + signature locale.
+    - Ajout du mode video dans la modale camera (15s max, 480p, mute) et branchement sur la checklist.
+    - Ajout d'un rendu avec filigrane (date + "Puissance 5") sur les miniatures dans l'app.
+    - Export PDF: ajout des preuves photo (avant/apres + checklist) dans le PDF avec filigrane visible.
+    - Amelioration creation checklist: edition du libelle dans la sheet + prevention des doublons.
+- **Decisions Techniques :** Video en mode mute pour eviter permissions micro et rester compatible Expo Go. Filigrane rendu dans l'app + dans le PDF (preuve partageable) sans modifier le fichier image brut (signature inchangée). Limites (6 images) pour eviter surconsommation memoire lors du base64/PDF.
+- **Impacts & Dependances :** Fichiers touches: `lib/models.ts`, `lib/state.ts`, `lib/store.tsx`, `components/ui/CameraCaptureModal.tsx`, `components/ui/WatermarkedThumbnail.tsx`, `components/ui/Icon.tsx`, `app/(tabs)/controls/[id].tsx`, `app/(tabs)/incidents/[id].tsx`, `app/(tabs)/reports/index.tsx`, `app/templates/new.tsx`.
+- **Prochaines étapes :** Ajouter une lecture/preview video in-app (si necessaire) via un composant video, et/ou une conversion "photo filigranee" lors du partage hors PDF si besoin.
+
+### [2026-06-02T13:40:00Z] | Workflow incident: clôture uniquement avec preuve + transitions de statut sûres
+- **Contexte :** Un incident ne doit pas pouvoir être clôturé sans preuve, et les transitions de statut doivent rester logiques (éviter des sauts incohérents).
+- **Modifications effectuees :**
+    - Blocage côté store des transitions non autorisées + interdiction de `clos` sans photo.
+    - UI: actions contextuelles selon le statut (ouvert/en cours/clos) et CTA “Clôturer” désactivé sans preuve.
+    - Edition: validation avant sauvegarde pour empêcher “clos” sans preuve et transitions invalides.
+- **Decisions Techniques :** Défense en profondeur: règles côté reducer (source of truth) + UX explicite côté écrans. Les transitions sont explicites et stables même si un deep link tente une action invalide.
+- **Impacts & Dependances :** Fichiers touches: `lib/store.tsx`, `app/(tabs)/incidents/[id].tsx`, `app/(tabs)/incidents/edit/[id].tsx`.
+- **Prochaines étapes :** Ajouter éventuellement une règle métier “en cours” obligatoire avant clôture (déjà appliquée via transitions) et un badge “preuve manquante” sur les listes.
+
 ### [2026-05-31T00:15:00Z] | Optimisation UI/UX formulaires (mobile, pas de debordement)
 - **Contexte :** Sur mobile, certains formulaires pouvaient donner une impression de debordement ou de CTA caches (clavier + tab bar), et certains elements (chips/pickers) pouvaient s'etendre au-dela de l'ecran avec de longs libelles.
 - **Modifications effectuees :**

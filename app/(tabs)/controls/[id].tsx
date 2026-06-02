@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Alert, Image, Modal, Platform, Pressable, Text, TextInput, View } from 'react-native';
+import { Alert, Modal, Platform, Pressable, Text, TextInput, View } from 'react-native';
 import { useColorScheme } from 'nativewind';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -12,6 +12,7 @@ import { Icon } from '../../../components/ui/Icon';
 import { Rating } from '../../../components/ui/Rating';
 import { Screen } from '../../../components/ui/Screen';
 import { SectionHeader } from '../../../components/ui/SectionHeader';
+import { WatermarkedThumbnail } from '../../../components/ui/WatermarkedThumbnail';
 import { createSignedEvidence } from '../../../lib/evidence';
 import { haversineDistanceMeters, nowISODateTime } from '../../../lib/format';
 import { canAccessPathname, canPerform } from '../../../lib/models';
@@ -25,7 +26,7 @@ export default function ControlDetailScreen() {
   const { colorScheme } = useColorScheme();
   const Location: any = Platform.OS === 'web' ? null : require('expo-location');
   const Network: any = Platform.OS === 'web' ? null : require('expo-network');
-  const [cameraMode, setCameraMode] = useState<null | { kind: 'before' | 'after' | 'qr' }>(null);
+  const [cameraMode, setCameraMode] = useState<null | { kind: 'before' | 'after' | 'qr' | 'itemPhoto' | 'itemVideo'; itemId?: string }>(null);
   const [pendingCaptureKind, setPendingCaptureKind] = useState<null | 'before' | 'after'>(null);
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [qrValue, setQrValue] = useState('');
@@ -118,6 +119,45 @@ export default function ControlDetailScreen() {
         kind,
         uri: photoUri,
         capturedAt,
+        lat,
+        lng,
+        distanceMeters: typeof distanceMeters === 'number' ? distanceMeters : undefined,
+        fileHash: sig.fileHash,
+        signature: sig.signature,
+        certified
+      }
+    });
+    setCameraMode(null);
+  };
+
+  const saveChecklistAttachment = async (itemId: string, mediaType: 'photo' | 'video', uri: string) => {
+    if (!inspection || !site) return;
+    if (Platform.OS === 'web') return;
+    if (!(itemId in inspection.checklist)) return;
+
+    const prereq = await ensureCertPrereqs();
+    const capturedAt = nowISODateTime();
+    const lat = prereq?.lat;
+    const lng = prereq?.lng;
+    const distanceMeters = prereq?.distanceMeters;
+    const sig = await createSignedEvidence(uri, [capturedAt, site.id, itemId, mediaType, lat, lng, distanceMeters]);
+    const certified = Boolean(
+      sig.signature &&
+        (prereq ? prereq.gpsVerified : inspection.certifications.gpsVerified) &&
+        (prereq ? prereq.networkVerified : inspection.certifications.networkVerified) &&
+        inspection.certifications.qrScanned
+    );
+
+    dispatch({
+      type: 'addInspectionAttachment',
+      inspectionId: inspection.id,
+      attachment: {
+        id: `att_${Math.random().toString(16).slice(2)}_${Date.now().toString(16)}`,
+        itemId,
+        mediaType,
+        uri,
+        capturedAt,
+        watermarkText: 'Puissance 5',
         lat,
         lng,
         distanceMeters: typeof distanceMeters === 'number' ? distanceMeters : undefined,
@@ -357,6 +397,9 @@ export default function ControlDetailScreen() {
           <View className="gap-3">
             {template.items.map(item => {
               const checked = Boolean(inspection.checklist[item.id]);
+              const attForItem = inspection.attachments.filter(a => a.itemId === item.id);
+              const photoCount = attForItem.filter(a => a.mediaType === 'photo').length;
+              const videoCount = attForItem.filter(a => a.mediaType === 'video').length;
               return (
                 <Card key={item.id} onPress={() => dispatch({ type: 'toggleChecklist', inspectionId: inspection.id, itemId: item.id })}>
                   <View className="flex-row items-center justify-between">
@@ -378,10 +421,92 @@ export default function ControlDetailScreen() {
                       <Icon name={checked ? 'check' : 'circle'} size={20} color={checked ? '#047857' : '#94A3B8'} strokeWidth={2.4} />
                     </View>
                   </View>
+                  <View className="mt-3 flex-row items-center justify-between">
+                    <View className="flex-row items-center">
+                      <View className="flex-row items-center rounded-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-2">
+                        <Icon name="camera" size={14} color={isDark ? 'rgba(255,255,255,0.85)' : '#0F172A'} />
+                        <Text className="ml-2 text-[12px] font-semibold text-slate-700 dark:text-slate-200">{photoCount}</Text>
+                      </View>
+                      <View className="w-2" />
+                      <View className="flex-row items-center rounded-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-2">
+                        <Icon name="video" size={14} color={isDark ? 'rgba(255,255,255,0.85)' : '#0F172A'} />
+                        <Text className="ml-2 text-[12px] font-semibold text-slate-700 dark:text-slate-200">{videoCount}</Text>
+                      </View>
+                    </View>
+                    <View className="flex-row gap-2">
+                      <Pressable
+                        accessibilityRole="button"
+                        onPress={() => setCameraMode({ kind: 'itemPhoto', itemId: item.id })}
+                        className="h-10 flex-row items-center rounded-2xl bg-brand-600 px-3 active:opacity-90"
+                      >
+                        <Icon name="camera" size={16} color="#FFFFFF" />
+                        <Text className="ml-2 text-[12px] font-extrabold text-white">Photo</Text>
+                      </Pressable>
+                      <Pressable
+                        accessibilityRole="button"
+                        onPress={() => setCameraMode({ kind: 'itemVideo', itemId: item.id })}
+                        className="h-10 flex-row items-center rounded-2xl bg-slate-900 px-3 active:opacity-90"
+                      >
+                        <Icon name="video" size={16} color="#FFFFFF" />
+                        <Text className="ml-2 text-[12px] font-extrabold text-white">Vidéo</Text>
+                      </Pressable>
+                    </View>
+                  </View>
                 </Card>
               );
             })}
           </View>
+
+          <SectionHeader title="Preuves checklist" />
+          <Card>
+            {inspection.attachments.length === 0 ? (
+              <View className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 px-4 py-5">
+                <Text className="text-[13px] font-semibold text-slate-900 dark:text-white">Aucune preuve par critère</Text>
+                <Text className="mt-1 text-[12px] text-slate-500 dark:text-slate-300">Ajoute une photo ou une vidéo depuis la checklist.</Text>
+              </View>
+            ) : (
+              <View className="gap-3">
+                {inspection.attachments.slice(0, 6).map(att => {
+                  const item = template.items.find(i => i.id === att.itemId);
+                  return (
+                    <Pressable
+                      key={att.id}
+                      onLongPress={() =>
+                        Alert.alert('Supprimer', 'Supprimer cette preuve ?', [
+                          { text: 'Annuler', style: 'cancel' },
+                          {
+                            text: 'Supprimer',
+                            style: 'destructive',
+                            onPress: () => dispatch({ type: 'deleteInspectionAttachment', inspectionId: inspection.id, attachmentId: att.id })
+                          }
+                        ])
+                      }
+                      className="flex-row items-center justify-between rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-3"
+                    >
+                      <View className="flex-row items-center flex-1 pr-3">
+                        {att.mediaType === 'photo' ? (
+                          <WatermarkedThumbnail uri={att.uri} capturedAt={att.capturedAt} />
+                        ) : (
+                          <View className="h-[52px] w-[52px] items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800">
+                            <Icon name="video" size={18} color={isDark ? '#FFFFFF' : '#0F172A'} />
+                          </View>
+                        )}
+                        <View className="ml-3 flex-1">
+                          <Text className="text-[13px] font-semibold text-slate-900 dark:text-white" numberOfLines={1}>
+                            {item?.label ?? 'Critère'}
+                          </Text>
+                          <Text className="mt-0.5 text-[12px] text-slate-500 dark:text-slate-300">
+                            {att.mediaType === 'photo' ? 'Photo' : 'Vidéo'} • {att.capturedAt.slice(0, 16).replace('T', ' ')} • {att.certified ? 'certifiée' : 'non certifiée'}
+                          </Text>
+                        </View>
+                      </View>
+                      <Chip label={att.certified ? 'OK' : '!'} tone={att.certified ? 'success' : 'warning'} />
+                    </Pressable>
+                  );
+                })}
+              </View>
+            )}
+          </Card>
 
           <SectionHeader title={control.type === 'beforeAfter' ? 'Photos avant / après' : 'Preuves photo'} />
           <Card>
@@ -431,7 +556,7 @@ export default function ControlDetailScreen() {
                     className="flex-row items-center justify-between rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-3"
                   >
                     <View className="flex-row items-center">
-                      <Image source={{ uri: p.uri }} style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: isDark ? '#111B21' : '#E2E8F0' }} />
+                      <WatermarkedThumbnail uri={p.uri} capturedAt={p.capturedAt} size={44} radius={12} />
                       <View className="ml-3">
                         <Text className="text-[13px] font-semibold text-slate-900 dark:text-white">
                           {control.type === 'beforeAfter' ? (p.kind === 'before' ? 'Avant' : 'Après') : 'Preuve terrain'}
@@ -485,14 +610,32 @@ export default function ControlDetailScreen() {
 
           <CameraCaptureModal
             visible={Boolean(cameraMode)}
-            title={cameraMode?.kind === 'qr' ? 'Scanner QR' : cameraMode?.kind === 'before' ? 'Photo avant' : 'Photo après'}
-            mode={cameraMode?.kind === 'qr' ? 'qr' : 'photo'}
+            title={
+              cameraMode?.kind === 'qr'
+                ? 'Scanner QR'
+                : cameraMode?.kind === 'before'
+                  ? 'Photo avant'
+                  : cameraMode?.kind === 'after'
+                    ? 'Photo après'
+                    : cameraMode?.kind === 'itemVideo'
+                      ? 'Vidéo (critère)'
+                      : 'Photo (critère)'
+            }
+            mode={cameraMode?.kind === 'qr' ? 'qr' : cameraMode?.kind === 'itemVideo' ? 'video' : 'photo'}
             overlay={overlay}
             onClose={() => setCameraMode(null)}
             onBarcodeScanned={value => setQr(value)}
             onPhotoCaptured={async uri => {
               if (cameraMode?.kind === 'before' || cameraMode?.kind === 'after') {
                 await savePhoto(cameraMode.kind, uri);
+              }
+              if (cameraMode?.kind === 'itemPhoto' && cameraMode.itemId) {
+                await saveChecklistAttachment(cameraMode.itemId, 'photo', uri);
+              }
+            }}
+            onVideoCaptured={async uri => {
+              if (cameraMode?.kind === 'itemVideo' && cameraMode.itemId) {
+                await saveChecklistAttachment(cameraMode.itemId, 'video', uri);
               }
             }}
           />

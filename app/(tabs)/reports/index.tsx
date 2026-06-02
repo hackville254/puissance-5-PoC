@@ -28,6 +28,7 @@ export default function ReportsScreen() {
 
   const Print: any = Platform.OS === 'web' ? null : require('expo-print');
   const Sharing: any = Platform.OS === 'web' ? null : require('expo-sharing');
+  const FileSystem: any = Platform.OS === 'web' ? null : require('expo-file-system');
 
   const exportPdf = async (inspectionId: string) => {
     const rep = state.inspections.find(i => i.id === inspectionId);
@@ -42,11 +43,27 @@ export default function ReportsScreen() {
     }
     if (!Print?.printToFileAsync || !Sharing?.shareAsync) return;
 
+    const toDataUri = async (uri: string) => {
+      try {
+        const base64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
+        return `data:image/jpeg;base64,${base64}`;
+      } catch {
+        return null;
+      }
+    };
+
     const checkedCount = Object.values(rep.checklist).filter(Boolean).length;
     const totalCount = Object.keys(rep.checklist).length;
     const critOk = template ? template.items.filter(it => it.critical).every(it => rep.checklist[it.id]) : false;
     const beforeCount = rep.photos.filter(p => p.kind === 'before').length;
     const afterCount = rep.photos.filter(p => p.kind === 'after').length;
+    const photosForPdf = rep.photos.slice(0, 6);
+    const photoData = (await Promise.all(photosForPdf.map(async p => ({ p, dataUri: await toDataUri(p.uri) })))).filter(x => Boolean(x.dataUri));
+
+    const att = rep.attachments ?? [];
+    const attPhotos = att.filter(a => a.mediaType !== 'video').slice(0, 6);
+    const attVideos = att.filter(a => a.mediaType === 'video').slice(0, 6);
+    const attPhotoData = (await Promise.all(attPhotos.map(async a => ({ a, dataUri: await toDataUri(a.uri) })))).filter(x => Boolean(x.dataUri));
 
     const html = `
       <html>
@@ -64,6 +81,11 @@ export default function ReportsScreen() {
             .warn { background: #ffedd5; }
             .box { border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; }
             ul { padding-left: 18px; margin: 6px 0; }
+            .grid { display: flex; flex-wrap: wrap; gap: 10px; }
+            .ph { width: calc(50% - 5px); border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; position: relative; }
+            .ph img { width: 100%; height: auto; display: block; }
+            .wm { position: absolute; right: 10px; bottom: 10px; background: rgba(0,0,0,0.45); color: #fff; padding: 3px 8px; border-radius: 999px; font-size: 10px; font-weight: 900; }
+            .dt { position: absolute; left: 10px; top: 10px; background: rgba(0,0,0,0.45); color: #fff; padding: 3px 8px; border-radius: 999px; font-size: 10px; font-weight: 800; }
           </style>
         </head>
         <body>
@@ -105,6 +127,54 @@ export default function ReportsScreen() {
           <h2>Commentaire</h2>
           <div class="box">
             <div>${escapeHtml(rep.notes || '—')}</div>
+          </div>
+
+          <h2>Preuves photo (filigrane)</h2>
+          <div class="box">
+            ${
+              photoData.length > 0
+                ? `<div class="grid">${photoData
+                    .map(({ p, dataUri }) => {
+                      const stamp = String(p.capturedAt ?? '').slice(0, 16).replace('T', ' ');
+                      const label = control?.type === 'beforeAfter' ? (p.kind === 'before' ? 'Avant' : 'Après') : 'Preuve';
+                      return `<div class="ph">
+                        <img src="${dataUri}" />
+                        <div class="dt">${escapeHtml(stamp)}</div>
+                        <div class="wm">Puissance 5</div>
+                        <div class="muted" style="padding: 8px 10px;">${escapeHtml(label)}</div>
+                      </div>`;
+                    })
+                    .join('')}</div>`
+                : `<div class="muted">Aucune photo exportable.</div>`
+            }
+            <div class="muted" style="margin-top: 10px;">Les photos incluent la date et le filigrane “Puissance 5” dans le PDF.</div>
+          </div>
+
+          <h2>Preuves checklist</h2>
+          <div class="box">
+            ${
+              attPhotoData.length > 0
+                ? `<div class="grid">${attPhotoData
+                    .map(({ a, dataUri }) => {
+                      const stamp = String(a.capturedAt ?? '').slice(0, 16).replace('T', ' ');
+                      const label = template?.items?.find(it => it.id === a.itemId)?.label ?? 'Critère';
+                      return `<div class="ph">
+                        <img src="${dataUri}" />
+                        <div class="dt">${escapeHtml(stamp)}</div>
+                        <div class="wm">${escapeHtml(a.watermarkText ?? 'Puissance 5')}</div>
+                        <div class="muted" style="padding: 8px 10px;">${escapeHtml(label)}</div>
+                      </div>`;
+                    })
+                    .join('')}</div>`
+                : `<div class="muted">Aucune photo par critère.</div>`
+            }
+            ${
+              attVideos.length > 0
+                ? `<div class="muted" style="margin-top: 10px;">Vidéos (${attVideos.length}): ${attVideos
+                    .map(v => escapeHtml(String(v.capturedAt ?? '').slice(0, 16).replace('T', ' ')))
+                    .join(' • ')}</div>`
+                : ``
+            }
           </div>
         </body>
       </html>

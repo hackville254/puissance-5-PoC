@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Modal, Pressable, Text, View } from 'react-native';
 import { useColorScheme } from 'nativewind';
 
@@ -35,7 +35,13 @@ export default function NewTemplateScreen() {
     { id: uuid('it'), label: 'Déchets évacués', critical: true }
   ]);
 
-  const canSave = useMemo(() => name.trim().length >= 4 && items.length >= 1, [name, items.length]);
+  const canSave = useMemo(() => {
+    if (name.trim().length < 4) return false;
+    if (items.length < 1) return false;
+    const normalized = items.map(i => i.label.trim().toLowerCase()).filter(Boolean);
+    if (normalized.some(v => v.length < 3)) return false;
+    return new Set(normalized).size === normalized.length;
+  }, [items, name]);
   const hasDraftChanges = useMemo(
     () =>
       name !== 'Checklist — Nouveau' ||
@@ -57,6 +63,11 @@ export default function NewTemplateScreen() {
     const label = itemLabel.trim();
     if (label.length < 3) return;
     if (items.length >= 24) return;
+    const exists = items.some(it => it.label.trim().toLowerCase() === label.toLowerCase());
+    if (exists) {
+      Alert.alert('Doublon', 'Ce critère existe déjà dans la checklist.');
+      return;
+    }
     setItems(prev => [{ id: uuid('it'), label: label.slice(0, 80), critical }, ...prev]);
     setItemLabel('');
     setCritical(false);
@@ -82,6 +93,20 @@ export default function NewTemplateScreen() {
   const activeIndex = activeItemId ? items.findIndex(i => i.id === activeItemId) : -1;
   const activeItem = activeIndex >= 0 ? items[activeIndex] : null;
   const criticalMode = critical ? 'critique' : 'optionnel';
+  const [activeLabelDraft, setActiveLabelDraft] = useState('');
+  const lastActiveIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!activeItemId) {
+      lastActiveIdRef.current = null;
+      setActiveLabelDraft('');
+      return;
+    }
+    if (lastActiveIdRef.current === activeItemId) return;
+    lastActiveIdRef.current = activeItemId;
+    const it = items.find(i => i.id === activeItemId);
+    setActiveLabelDraft(it?.label ?? '');
+  }, [activeItemId, items]);
 
   const save = () => {
     const tpl: ChecklistTemplate = {
@@ -213,6 +238,21 @@ export default function NewTemplateScreen() {
             </View>
 
             <View className="mt-5 gap-3">
+              <Card>
+                <FormField label="Libellé" icon="pencil" hint="Nom court, visible sur mobile.">
+                  <TextField
+                    leftIcon="pencil"
+                    value={activeLabelDraft}
+                    onChangeText={t => {
+                      setActiveLabelDraft(t);
+                      if (!activeItem) return;
+                      const next = t.trimStart().slice(0, 80);
+                      setItems(prev => prev.map(x => (x.id === activeItem.id ? { ...x, label: next } : x)));
+                    }}
+                    autoCapitalize="sentences"
+                  />
+                </FormField>
+              </Card>
               <View className="flex-row gap-3">
                 <Button
                   label="Monter"

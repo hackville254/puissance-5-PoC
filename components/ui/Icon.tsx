@@ -30,6 +30,7 @@ import {
   Trash2,
   TriangleAlert,
   User,
+  Video,
   X
 } from 'lucide-react-native';
 
@@ -57,6 +58,7 @@ export type IconName =
   | 'list'
   | 'building'
   | 'camera'
+  | 'video'
   | 'settings'
   | 'check'
   | 'minus'
@@ -97,6 +99,7 @@ const ICONS: Record<IconName, any> = {
   list: List,
   building: Building2,
   camera: Camera,
+  video: Video,
   settings: Settings,
   check: Check,
   minus: Minus,

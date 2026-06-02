@@ -9,6 +9,7 @@ import type {
   IncidentPhoto,
   IncidentStatus,
   Inspection,
+  InspectionAttachment,
   InspectionPhoto,
   PlannedControl,
   Severity,
@@ -23,6 +24,7 @@ const MAX_INCIDENTS = 500;
 const MAX_INSPECTIONS = 250;
 export const MAX_PHOTOS_PER_INSPECTION = 12;
 export const MAX_PHOTOS_PER_INCIDENT = 8;
+export const MAX_ATTACHMENTS_PER_INSPECTION = 24;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
@@ -156,6 +158,28 @@ export function normalizeInspectionPhoto(value: unknown): InspectionPhoto | null
   };
 }
 
+export function normalizeInspectionAttachment(value: unknown): InspectionAttachment | null {
+  if (!isRecord(value)) return null;
+  const id = readString(value.id, '', 96);
+  const itemId = readString(value.itemId, '', 96);
+  const uri = readString(value.uri, '', 512);
+  if (!id || !itemId || !uri) return null;
+  return {
+    id,
+    itemId,
+    mediaType: value.mediaType === 'video' ? 'video' : 'photo',
+    uri,
+    capturedAt: readString(value.capturedAt, new Date().toISOString(), 40),
+    watermarkText: readString(value.watermarkText, 'Puissance 5', 24),
+    lat: typeof value.lat === 'number' ? clamp(value.lat, -90, 90) : undefined,
+    lng: typeof value.lng === 'number' ? clamp(value.lng, -180, 180) : undefined,
+    distanceMeters: typeof value.distanceMeters === 'number' ? clamp(Math.round(value.distanceMeters), 0, 5000) : undefined,
+    fileHash: readOptionalString(value.fileHash, 128),
+    signature: readOptionalString(value.signature, 256),
+    certified: readBoolean(value.certified, false)
+  };
+}
+
 export function normalizeIncidentPhoto(value: unknown): IncidentPhoto | null {
   if (!isRecord(value)) return null;
   const id = readString(value.id, '', 96);
@@ -183,6 +207,10 @@ export function normalizeInspection(value: unknown, controlIds: Set<string>, tem
     .map(normalizeInspectionPhoto)
     .filter((photo): photo is InspectionPhoto => Boolean(photo))
     .slice(0, MAX_PHOTOS_PER_INSPECTION);
+  const attachments = readArray((value as any).attachments)
+    .map(normalizeInspectionAttachment)
+    .filter((att): att is InspectionAttachment => Boolean(att))
+    .slice(0, MAX_ATTACHMENTS_PER_INSPECTION);
   const cert = isRecord(value.certifications) ? value.certifications : {};
   const checklistRecord = isRecord(value.checklist) ? value.checklist : {};
   const checklist = Object.fromEntries(
@@ -202,6 +230,7 @@ export function normalizeInspection(value: unknown, controlIds: Set<string>, tem
     rating: clamp(readNumber(value.rating, 0), 0, 5),
     notes: readString(value.notes, '', 1200),
     photos,
+    attachments,
     certifications: {
       gpsVerified: readBoolean(cert.gpsVerified, false),
       timeStamped: readBoolean(cert.timeStamped, true),

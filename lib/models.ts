@@ -61,6 +61,21 @@ export interface InspectionPhoto {
   certified: boolean;
 }
 
+export interface InspectionAttachment {
+  id: string;
+  itemId: string;
+  mediaType: 'photo' | 'video';
+  uri: string;
+  capturedAt: ISODateTime;
+  watermarkText: string;
+  lat?: number;
+  lng?: number;
+  distanceMeters?: number;
+  fileHash?: string;
+  signature?: string;
+  certified: boolean;
+}
+
 export interface IncidentPhoto {
   id: string;
   uri: string;
@@ -84,6 +99,7 @@ export interface Inspection {
   rating: number;
   notes: string;
   photos: InspectionPhoto[];
+  attachments: InspectionAttachment[];
   certifications: {
     gpsVerified: boolean;
     timeStamped: boolean;

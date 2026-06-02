@@ -16,9 +16,11 @@ import type {
 } from './models';
 import { canPerform } from './models';
 import {
+  MAX_ATTACHMENTS_PER_INSPECTION,
   MAX_PHOTOS_PER_INCIDENT,
   MAX_PHOTOS_PER_INSPECTION,
   normalizeIncidentPhoto,
+  normalizeInspectionAttachment,
   normalizeInspectionPhoto,
   normalizeLoadedState,
   normalizePlannedControl,
@@ -49,6 +51,8 @@ type Action =
   | { type: 'setInspectionPeople'; inspectionId: string; evaluatorName: string; evaluatedAgentName: string }
   | { type: 'addInspectionPhoto'; inspectionId: string; photo: Inspection['photos'][number] }
   | { type: 'deleteInspectionPhoto'; inspectionId: string; photoId: string }
+  | { type: 'addInspectionAttachment'; inspectionId: string; attachment: Inspection['attachments'][number] }
+  | { type: 'deleteInspectionAttachment'; inspectionId: string; attachmentId: string }
   | { type: 'addIncidentPhoto'; incidentId: string; photo: Incident['photos'][number] }
   | { type: 'deleteIncidentPhoto'; incidentId: string; photoId: string }
   | {
@@ -273,6 +277,7 @@ function reducer(state: AppState, action: Action): AppState {
         rating: 0,
         notes: '',
         photos: [],
+        attachments: [],
         certifications: {
           gpsVerified: false,
           timeStamped: true,
@@ -361,6 +366,26 @@ function reducer(state: AppState, action: Action): AppState {
             : i
         )
       };
+    case 'addInspectionAttachment':
+      if (!canPerform(state.role, 'run_inspections')) return state;
+      if (!normalizeInspectionAttachment(action.attachment)) return state;
+      return {
+        ...state,
+        inspections: state.inspections.map(i => {
+          if (i.id !== action.inspectionId) return i;
+          if (!(action.attachment.itemId in i.checklist)) return i;
+          const next = [action.attachment, ...i.attachments.filter(att => att.id !== action.attachment.id)].slice(0, MAX_ATTACHMENTS_PER_INSPECTION);
+          return { ...i, attachments: next };
+        })
+      };
+    case 'deleteInspectionAttachment':
+      if (!canPerform(state.role, 'run_inspections')) return state;
+      return {
+        ...state,
+        inspections: state.inspections.map(i =>
+          i.id === action.inspectionId ? { ...i, attachments: i.attachments.filter(att => att.id !== action.attachmentId) } : i
+        )
+      };
     case 'setInspectionCertifications':
       if (!canPerform(state.role, 'run_inspections')) return state;
       if (Object.keys(sanitizeCertificationsPatch(action.patch)).length === 0) return state;
@@ -434,6 +459,22 @@ function reducer(state: AppState, action: Action): AppState {
       };
     case 'setIncidentStatus':
       if (!canPerform(state.role, 'manage_incidents')) return state;
+      {
+        const inc = state.incidents.find(i => i.id === action.incidentId);
+        if (!inc) return state;
+        const cur = inc.status;
+        const next = action.status;
+        const hasProof = inc.photos.length > 0;
+
+        const allowed =
+          next === cur ||
+          (cur === 'ouvert' && next === 'en_cours') ||
+          (cur === 'en_cours' && (next === 'ouvert' || next === 'clos')) ||
+          (cur === 'clos' && next === 'ouvert');
+
+        if (!allowed) return state;
+        if (next === 'clos' && !hasProof) return state;
+      }
       return {
         ...state,
         incidents: state.incidents.map(inc => (inc.id === action.incidentId ? { ...inc, status: action.status } : inc))

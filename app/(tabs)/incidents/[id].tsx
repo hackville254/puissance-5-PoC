@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Alert, Image, Pressable, Text, View } from 'react-native';
+import { Alert, Pressable, Text, View } from 'react-native';
 import { useColorScheme } from 'nativewind';
 import { useState } from 'react';
 
@@ -11,6 +11,7 @@ import { Chip } from '../../../components/ui/Chip';
 import { Icon } from '../../../components/ui/Icon';
 import { Screen } from '../../../components/ui/Screen';
 import { SectionHeader } from '../../../components/ui/SectionHeader';
+import { WatermarkedThumbnail } from '../../../components/ui/WatermarkedThumbnail';
 import { createSignedEvidence, readFieldEvidenceContext } from '../../../lib/evidence';
 import { nowISODateTime } from '../../../lib/format';
 import type { IncidentStatus, Severity } from '../../../lib/models';
@@ -50,6 +51,7 @@ export default function IncidentDetailScreen() {
   const incident = state.incidents.find(i => i.id === id);
   const site = incident ? state.sites.find(s => s.id === incident.siteId) : undefined;
   const canEdit = canPerform(state.role, 'manage_incidents');
+  const hasProof = Boolean(incident && incident.photos.length > 0);
   const isDark = colorScheme === 'dark';
   const overlay = isDark ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.35)';
 
@@ -132,9 +134,28 @@ export default function IncidentDetailScreen() {
       <SectionHeader title="Actions" />
       {canEdit ? (
         <View className="gap-3">
-          <Button label="Passer en cours" variant="secondary" onPress={() => dispatch({ type: 'setIncidentStatus', incidentId: incident.id, status: 'en_cours' })} />
-          <Button label="Clôturer" onPress={() => dispatch({ type: 'setIncidentStatus', incidentId: incident.id, status: 'clos' })} />
-          <Button label="Réouvrir" variant="ghost" onPress={() => dispatch({ type: 'setIncidentStatus', incidentId: incident.id, status: 'ouvert' })} />
+          {incident.status === 'ouvert' ? (
+            <Button label="Passer en cours" onPress={() => dispatch({ type: 'setIncidentStatus', incidentId: incident.id, status: 'en_cours' })} />
+          ) : null}
+          {incident.status === 'en_cours' ? (
+            <>
+              <Button
+                label={hasProof ? 'Clôturer' : 'Clôturer (preuve requise)'}
+                disabled={!hasProof}
+                onPress={() => {
+                  if (!hasProof) {
+                    Alert.alert('Preuve requise', 'Ajoute au moins une photo avant de clôturer l’incident.');
+                    return;
+                  }
+                  dispatch({ type: 'setIncidentStatus', incidentId: incident.id, status: 'clos' });
+                }}
+              />
+              <Button label="Repasser en ouvert" variant="secondary" onPress={() => dispatch({ type: 'setIncidentStatus', incidentId: incident.id, status: 'ouvert' })} />
+            </>
+          ) : null}
+          {incident.status === 'clos' ? (
+            <Button label="Réouvrir" variant="secondary" onPress={() => dispatch({ type: 'setIncidentStatus', incidentId: incident.id, status: 'ouvert' })} />
+          ) : null}
         </View>
       ) : (
         <Card>
@@ -178,7 +199,7 @@ export default function IncidentDetailScreen() {
                 className="flex-row items-center justify-between rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-3"
               >
                 <View className="flex-row items-center flex-1 pr-3">
-                  <Image source={{ uri: photo.uri }} style={{ width: 52, height: 52, borderRadius: 14, backgroundColor: isDark ? '#111827' : '#E2E8F0' }} />
+                  <WatermarkedThumbnail uri={photo.uri} capturedAt={photo.capturedAt} size={52} radius={14} />
                   <View className="ml-3 flex-1">
                     <Text className="text-[13px] font-semibold text-slate-900 dark:text-white">Photo terrain</Text>
                     <Text className="mt-0.5 text-[12px] text-slate-500 dark:text-slate-300">

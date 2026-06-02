@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Linking, Modal, Platform, Pressable, Text, View } from 'react-native';
 
 export function CameraCaptureModal({
@@ -8,14 +8,16 @@ export function CameraCaptureModal({
   overlay,
   onClose,
   onPhotoCaptured,
+  onVideoCaptured,
   onBarcodeScanned
 }: {
   visible: boolean;
   title: string;
-  mode: 'photo' | 'qr';
+  mode: 'photo' | 'video' | 'qr';
   overlay: string;
   onClose: () => void;
   onPhotoCaptured?: (uri: string) => Promise<void> | void;
+  onVideoCaptured?: (uri: string) => Promise<void> | void;
   onBarcodeScanned?: (value: string) => void;
 }) {
   const CameraView: any = Platform.OS === 'web' ? null : require('expo-camera').CameraView;
@@ -25,6 +27,16 @@ export function CameraCaptureModal({
       : (require('expo-camera').useCameraPermissions as () => readonly [any, () => Promise<any>]);
   const [cameraPermission, requestCameraPermission] = cameraPermissionsHook();
   const cameraRef = useRef<any>(null);
+  const [recording, setRecording] = useState(false);
+
+  useEffect(() => {
+    if (!visible && recording) {
+      try {
+        cameraRef.current?.stopRecording?.();
+      } catch {}
+      setRecording(false);
+    }
+  }, [recording, visible]);
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -76,6 +88,8 @@ export function CameraCaptureModal({
               ref={cameraRef}
               style={{ flex: 1, marginTop: 12, borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: 'hidden' }}
               facing="back"
+              mode={mode === 'video' ? 'video' : 'picture'}
+              mute={mode === 'video'}
               barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
               onBarcodeScanned={
                 mode === 'qr'
@@ -107,6 +121,44 @@ export function CameraCaptureModal({
                     <View style={{ height: 54, width: 54, borderRadius: 999, backgroundColor: '#25D366' }} />
                   </Pressable>
                   <Text style={{ marginTop: 10, color: 'rgba(255,255,255,0.85)', fontWeight: '700' }}>Appuyer pour capturer</Text>
+                </View>
+              ) : mode === 'video' ? (
+                <View style={{ position: 'absolute', left: 0, right: 0, bottom: 18, alignItems: 'center' }}>
+                  <Pressable
+                    onPress={async () => {
+                      if (!recording) {
+                        setRecording(true);
+                        try {
+                          const video = await cameraRef.current?.recordAsync?.({
+                            maxDuration: 15,
+                            quality: '480p'
+                          });
+                          const uri = video?.uri ? String(video.uri) : '';
+                          if (uri) await onVideoCaptured?.(uri);
+                        } finally {
+                          setRecording(false);
+                        }
+                        return;
+                      }
+                      try {
+                        cameraRef.current?.stopRecording?.();
+                      } catch {}
+                    }}
+                    style={{
+                      height: 64,
+                      width: 64,
+                      borderRadius: 999,
+                      backgroundColor: '#FFFFFF',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <View style={{ height: 54, width: 54, borderRadius: 999, backgroundColor: recording ? '#EF4444' : '#111827' }} />
+                  </Pressable>
+                  <Text style={{ marginTop: 10, color: 'rgba(255,255,255,0.9)', fontWeight: '800' }}>
+                    {recording ? 'Enregistrement… (appuyer pour arrêter)' : 'Appuyer pour filmer (15s max)'}
+                  </Text>
+                  <Text style={{ marginTop: 6, color: 'rgba(255,255,255,0.75)', fontWeight: '700' }}>Sans audio</Text>
                 </View>
               ) : (
                 <View style={{ position: 'absolute', left: 0, right: 0, bottom: 18, alignItems: 'center' }}>

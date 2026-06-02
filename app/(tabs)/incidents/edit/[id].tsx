@@ -118,6 +118,20 @@ export default function EditIncidentScreen() {
   }
 
   const save = () => {
+    const hasProof = incident.photos.length > 0;
+    const allowed =
+      status === incident.status ||
+      (incident.status === 'ouvert' && status === 'en_cours') ||
+      (incident.status === 'en_cours' && (status === 'ouvert' || status === 'clos')) ||
+      (incident.status === 'clos' && status === 'ouvert');
+    if (!allowed) {
+      Alert.alert('Statut invalide', 'Transition de statut non autorisée.');
+      return;
+    }
+    if (status === 'clos' && !hasProof) {
+      Alert.alert('Preuve requise', 'Ajoute au moins une photo avant de clôturer l’incident.');
+      return;
+    }
     dispatch({
       type: 'updateIncident',
       incidentId: incident.id,
